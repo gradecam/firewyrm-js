@@ -86,3 +86,9 @@ function getRootObject(wyrmHole) {
     return rootAPI.getRootObject();
 }
 
+if (module) {
+    module.exports = {
+        blah: blah,
+        WyrmJSAPI: WyrmJSAPI
+    };
+}
