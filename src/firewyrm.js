@@ -3,7 +3,7 @@ function blah() {
     console.log("BLAH!");
 }
 
-var ConsoleWormHole = function() {
+var ConsoleWyrmHole = function() {
     var msgIdCnt = 0;
     var dfds = {};
 
@@ -39,7 +39,7 @@ function deserializeValue(value) {
 }
 
 
-var WyrmJSAPI = function(objectId, fnList, pList, name, wormHole) {
+var WyrmJSAPI = function(objectId, fnList, pList, name, wyrmHole) {
     var self = this;
 
     self.objectId = objectId || 0;
@@ -54,7 +54,7 @@ var WyrmJSAPI = function(objectId, fnList, pList, name, wormHole) {
     self.fnList.forEach(function(fnName) {
         self[fnName] = function() {
             var args = arguments.map(function(arg) { return serializeValue(arg); });
-            return wormHole.sendMessage('CallFn', {
+            return wyrmHole.sendMessage('CallFn', {
                 objectId: self.objectId,
                 fnName: fnName,
                 args: arguments
@@ -64,13 +64,13 @@ var WyrmJSAPI = function(objectId, fnList, pList, name, wormHole) {
 
     self.pList.forEach(function(pName) {
         self.__defineGetter__(pName, function() {
-            return wormHole.sendMessage('GetP', {
+            return wyrmHole.sendMessage('GetP', {
                 objectId: self.objectId,
                 pName: pName
             });
         });
         self.__defineSetter__(pName, function(val) {
-            return wormHole.sendMessage('SetP', {
+            return wyrmHole.sendMessage('SetP', {
                 objectId: self.objectId,
                 pName: pName,
                 value: val
@@ -81,8 +81,8 @@ var WyrmJSAPI = function(objectId, fnList, pList, name, wormHole) {
 };
 
 
-function getRootObject(wormHole) {
-    var rootAPI = new WyrmJSAPI(0, ['getRootObject'],[], 'rootAPI', wormHole);
+function getRootObject(wyrmHole) {
+    var rootAPI = new WyrmJSAPI(0, ['getRootObject'],[], 'rootAPI', wyrmHole);
     return rootAPI.getRootObject();
 }
 
