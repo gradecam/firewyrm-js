@@ -1,7 +1,6 @@
 /* globals angular */
-function blah() {
-    console.log("BLAH!");
-}
+
+var Deferred = require('./fbpromise');
 
 var ConsoleWyrmHole = function() {
     var msgIdCnt = 0;
@@ -14,9 +13,9 @@ var ConsoleWyrmHole = function() {
             data: data
         };
         console.log('sendMessage: ', msgObj);
-        var dfd = new $.Deferred();
+        var dfd = new Deferred();
         dfds[msgIdCnt] = dfd;
-        return dfd.promise();
+        return dfd.promise;
     };
 };
 
@@ -88,7 +87,6 @@ function getRootObject(wyrmHole) {
 
 if (module) {
     module.exports = {
-        blah: blah,
         WyrmJSAPI: WyrmJSAPI,
         ConsoleWyrmHole: ConsoleWyrmHole
     };
