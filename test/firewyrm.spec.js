@@ -6,5 +6,10 @@
 describe("firewyrm", function() {
     it("should do blah!", function() {
         blah();
+
+        var consoleWormHole = new ConsoleWormHole();
+        var x = new WyrmJSAPI(0, ['blahFunc'], ['blah'], 'TestAPI', consoleWormHole);
+        x.blahFunc();
+        console.log("x.toString()", x.toString());
     });
 });
