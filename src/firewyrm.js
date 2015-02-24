@@ -53,7 +53,7 @@ var WyrmJSAPI = function(objectId, fnList, pList, name, wyrmHole) {
 
     self.fnList.forEach(function(fnName) {
         self[fnName] = function() {
-            var args = arguments.map(function(arg) { return serializeValue(arg); });
+            var args = Array.prototype.map.call(arguments, function(arg) { return serializeValue(arg); });
             return wyrmHole.sendMessage('CallFn', {
                 objectId: self.objectId,
                 fnName: fnName,
@@ -89,6 +89,7 @@ function getRootObject(wyrmHole) {
 if (module) {
     module.exports = {
         blah: blah,
-        WyrmJSAPI: WyrmJSAPI
+        WyrmJSAPI: WyrmJSAPI,
+        ConsoleWyrmHole: ConsoleWyrmHole
     };
 }
