@@ -1,32 +1,6 @@
 /*globals WeakMap*/
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
-define(['./fbpromise'], function(Deferred) {
-
-    var ConsoleWyrmHole = function() {
-        var msgIdCnt = 0;
-        var dfds = {};
-
-        this.sendMessage = function(msg, data) {
-            var msgObj = {
-                message: msg,
-                messageId: ++msgIdCnt,
-                data: data
-            };
-            console.log('sendMessage: ', msgObj);
-            var dfd = new Deferred();
-            dfds[msgIdCnt] = dfd;
-            return dfd.promise;
-        };
-    };
-    var MockWyrmHole = function() {
-        var self = this;
-
-        self.lastMessage = null;
-
-        self.sendMessage = function(msg, data) {
-            self.lastMessage = { message: msg, data: data};
-        };
-    };
+define(['./fbpromise', './consoleWyrmHole', './mockWyrmHole'], function(Deferred, ConsoleWyrmHole, MockWyrmHole) {
 
     var objectIdWeakMap = new WeakMap();
     var objectIdMap = {};
