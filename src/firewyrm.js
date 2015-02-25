@@ -1,9 +1,6 @@
 /*globals WeakMap*/
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(['./fbpromise'], function(Deferred) {
-    function blah() {
-        console.log("BLAH!");
-    }
 
     var ConsoleWyrmHole = function() {
         var msgIdCnt = 0;
@@ -19,6 +16,15 @@ define(['./fbpromise'], function(Deferred) {
             var dfd = new Deferred();
             dfds[msgIdCnt] = dfd;
             return dfd.promise;
+        };
+    };
+    var MockWyrmHole = function() {
+        var self = this;
+
+        self.lastMessage = null;
+
+        self.sendMessage = function(msg, data) {
+            self.lastMessage = { message: msg, data: data};
         };
     };
 
@@ -89,6 +95,7 @@ define(['./fbpromise'], function(Deferred) {
 
     return {
         WyrmJSAPI: WyrmJSAPI,
+        MockWyrmHole: MockWyrmHole,
         ConsoleWyrmHole: ConsoleWyrmHole
     };
 });

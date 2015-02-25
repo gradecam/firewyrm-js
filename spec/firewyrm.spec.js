@@ -6,10 +6,19 @@ var fw = require('../src/firewyrm');
 // fast-repeat and ng-repeat, as they should be compatible.
 describe("firewyrm", function() {
     describe("WyrmJSAPI", function() {
-        it("should define a function  when passed in the fnList argument", function() {
+        it("should define a function when passed in the fnList argument", function() {
             var consoleWyrmHole = new fw.ConsoleWyrmHole();
-            var x = new fw.WyrmJSAPI(0, ['blahFunc'], ['blah'], 'TestAPI', consoleWyrmHole);
+            var x = new fw.WyrmJSAPI(0, ['blahFunc'], [], 'TestAPI', consoleWyrmHole);
             x.blahFunc();
         });
+
+        it("should create a properly formed CallFn message", function() {
+            var mockWyrmHole = new fw.MockWyrmHole();
+            var x = new fw.WyrmJSAPI(0, ['blahFunc'], [], 'TestAPI', mockWyrmHole);
+            x.blahFunc();
+            expect(mockWyrmHole.lastMessage.message).toBe('CallFn');
+        });
+
     });
+
 });
