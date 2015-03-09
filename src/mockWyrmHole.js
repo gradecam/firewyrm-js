@@ -5,8 +5,8 @@ define(['./fbpromise'], function(Deferred) {
 
         self.lastMessage = null;
 
-        self.sendMessage = function(msg, data) {
-            self.lastMessage = { message: msg, data: data};
+        self.sendMessage = function(msg) {
+            self.lastMessage = msg;
         };
     };
 

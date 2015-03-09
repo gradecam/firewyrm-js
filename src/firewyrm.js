@@ -35,27 +35,16 @@ define(['./fbpromise', './consoleWyrmHole', './mockWyrmHole'], function(Deferred
         self.fnList.forEach(function(fnName) {
             self[fnName] = function() {
                 var args = Array.prototype.map.call(arguments, function(arg) { return serializeValue(arg); });
-                return wyrmHole.sendMessage('CallFn', {
-                    objectId: self.objectId,
-                    fnName: fnName,
-                    args: arguments
-                });
+                return wyrmHole.sendMessage(['Invoke', self.objectId, fnName, args]);
             };
         });
 
         self.pList.forEach(function(pName) {
             self.__defineGetter__(pName, function() {
-                return wyrmHole.sendMessage('GetP', {
-                    objectId: self.objectId,
-                    pName: pName
-                });
+                return wyrmHole.sendMessage(['GetP', objectId, pName]);
             });
             self.__defineSetter__(pName, function(val) {
-                return wyrmHole.sendMessage('SetP', {
-                    objectId: self.objectId,
-                    pName: pName,
-                    value: val
-                });
+                return wyrmHole.sendMessage(['SetP', objectId, pName, val]);
             });
         });
 
@@ -63,13 +52,11 @@ define(['./fbpromise', './consoleWyrmHole', './mockWyrmHole'], function(Deferred
 
 
     function getRootObject(wyrmHole) {
-        var rootAPI = new WyrmJSAPI(0, ['getRootObject'],[], 'rootAPI', wyrmHole);
-        return rootAPI.getRootObject();
+        return wyrmHole.sendMessage(['DescribeObj', 0]);
     }
 
     return {
         WyrmJSAPI: WyrmJSAPI,
-        MockWyrmHole: MockWyrmHole,
-        ConsoleWyrmHole: ConsoleWyrmHole
+        getRootObject: getRootObject
     };
 });
