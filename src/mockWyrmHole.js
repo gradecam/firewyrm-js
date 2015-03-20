@@ -3,10 +3,13 @@ define(['./fbpromise'], function(Deferred) {
     var MockWyrmHole = function() {
         var self = this;
 
-        self.lastMessage = null;
+        self.lastMessage = {};
 
-        self.sendMessage = function(msg) {
-            self.lastMessage = msg;
+        self.sendMessage = function(msg, cb) {
+            self.lastMessage = {
+                args: msg,
+                cb: cb
+            };
         };
     };
 
