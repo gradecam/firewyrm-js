@@ -10,6 +10,7 @@ module.exports = function(grunt) {
                 files: [
                     'src/**/*.js',
                     'spec/**/*[sS]pec.js',
+                    'spec/**/*.js',
                     '!Gruntfile.js',
                 ],
                 tasks: ['specs'],
