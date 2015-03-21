@@ -21,6 +21,7 @@ describe("firewyrm", function() {
             createArgs = {};
             enumProps = ['intProp', 'stringProp', 'arrayProp', 'functionProp'];
             mockWyrmHole = new MockWyrmHole();
+            mockWyrmHole.flushClockFn = jasmine.clock().flush; // so it can flush after responding to a message
             queenling = fw.create(mockWyrmHole, mimetype, createArgs);
         });
         it("should return a thennable", function() {

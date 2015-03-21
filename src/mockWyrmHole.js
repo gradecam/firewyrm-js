@@ -13,7 +13,10 @@ define(['./fbpromise'], function(Deferred) {
             self.lastMessage = {
                 args: msg,
                 cb: cb,
-                respond: function() { cb.apply(null, arguments); }
+                respond: function() {
+                    cb.apply(null, arguments);
+                    if (self.flushClockFn) { self.flushClockFn(); } // process any resulting promises / timeouts
+                }
             };
         };
     };
