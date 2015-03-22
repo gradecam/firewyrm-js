@@ -1,6 +1,6 @@
-/* globals jasmine */
 var FireWyrmJS = require('../../src/firewyrm');
 var MockWyrmHole = require('../../src/mockWyrmHole');
+var clock = require('./clock');
 var defaults = require('./defaults');
 
 module.exports = {
@@ -10,9 +10,7 @@ module.exports = {
 
 
 function newMockWyrmHole() {
-    var wyrmHole = new MockWyrmHole();
-    wyrmHole.flushClockFn = jasmine.clock().flush;
-    return wyrmHole;
+    return new MockWyrmHole();
 }
 
 function getResolvedQueenling(wyrmHole, mimetype, args, enumProps) {
@@ -29,6 +27,6 @@ function getResolvedQueenling(wyrmHole, mimetype, args, enumProps) {
         queenling = alienWyrmling; // this is the final resolved AlienWyrmling from initial contact
         return alienWyrmling;
     });
-    jasmine.clock().flush(); // make sure any promises are resolved
+    clock.flush(); // make sure any promises are resolved
     return queenling;
 }

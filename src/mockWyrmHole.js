@@ -1,5 +1,5 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
-define(['./deferred'], function(Deferred) {
+define(['./deferred', '../spec/helpers/clock'], function(Deferred, clock) {
     var id = 0;
     var MockWyrmHole = function() {
         var self = this;
@@ -15,7 +15,7 @@ define(['./deferred'], function(Deferred) {
                 cb: cb,
                 respond: function() {
                     cb.apply(null, arguments);
-                    if (self.flushClockFn) { self.flushClockFn(); } // process any resulting promises / timeouts
+                    clock.flush(); // process any resulting promises / timeouts if our mock clock is installed
                 }
             };
         };

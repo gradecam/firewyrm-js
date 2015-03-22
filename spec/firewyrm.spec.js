@@ -1,19 +1,18 @@
 /* globals jasmine, beforeEach, afterEach, describe, it, expect */
 'use strict';
 var _ = require('underscore');
-var clockHelpers = require('./helpers/clock');
 var fw = require('../src/firewyrm');
 var MockWyrmHole = require('../src/mockWyrmHole');
 //var ConsoleWyrmHole = require('../src/consoleWyrmHole');
+var clock = require('./helpers/clock');
 var lifecycle = require('./helpers/lifecycle');
 
 describe("firewyrm", function() {
     beforeEach(function() {
-        jasmine.clock().install();
-        clockHelpers.addFlushMethod();
+        clock.install();
     });
     afterEach(function() {
-        jasmine.clock().uninstall();
+        clock.uninstall();
     });
 
     describe("creating the queenling", function() {
@@ -23,7 +22,6 @@ describe("firewyrm", function() {
             createArgs = {};
             enumProps = ['intProp', 'stringProp', 'arrayProp', 'functionProp'];
             mockWyrmHole = new MockWyrmHole();
-            mockWyrmHole.flushClockFn = jasmine.clock().flush; // so it can flush after responding to a message
             queenling = fw.create(mockWyrmHole, mimetype, createArgs);
         });
         it("should return a thennable", function() {

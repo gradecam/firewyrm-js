@@ -1,12 +1,13 @@
 /* globals jasmine, beforeEach */
 var _ = require('underscore');
+var clock = require('./clock');
 
 beforeEach(function() {
     jasmine.addMatchers(deferredMatchers);
 });
 
-// NOTE: to use any of these except `toBeThennable`, you must be using
-//       jasmine's mock clock and clockHelpers.addFlushMethod()
+// NOTE: to use any of these except `toBeThennable`, you must have performed
+//       clock.install() using our clock helper
 var deferredMatchers = {
     toBeThennable: matcherFactory(function(util, customEqualityTesters, actual) {
         return {
@@ -17,35 +18,35 @@ var deferredMatchers = {
         var ret = {},
             dfd = getPromise(actual);
         dfd.then(passIfResolved(ret), passIfRejected(ret));
-        jasmine.clock().flush();
+        clock.flush();
         return ret;
     }),
     toBeResolved: matcherFactory(function(util, customEqualityTesters, actual) {
         var ret = {message: "Expected promise to be resolved but it never settled."},
             dfd = getPromise(actual);
         dfd.then(passIfResolved(ret), failIfRejected(ret));
-        jasmine.clock().flush();
+        clock.flush();
         return ret;
     }),
     toBeResolvedWith: matcherFactory(function(util, customEqualityTesters, actual, expected) {
         var ret = {message: "Expected promise to be resolved with " + expected + " but it never settled."},
             dfd = getPromise(actual);
         dfd.then(passIfResolved(ret, expected), failIfRejected(ret, expected));
-        jasmine.clock().flush();
+        clock.flush();
         return ret;
     }),
     toBeRejected: matcherFactory(function(util, customEqualityTesters, actual) {
         var ret = {message: "Expected promise to be rejected but it never settled."},
             dfd = getPromise(actual);
         dfd.then(failIfResolved(ret), passIfRejected(ret));
-        jasmine.clock().flush();
+        clock.flush();
         return ret;
     }),
     toBeRejectedWith: matcherFactory(function(util, customEqualityTesters, actual, expected) {
         var ret = {message: "Expected promise to be rejected with " + expected + " but it never settled."},
             dfd = getPromise(actual);
         dfd.then(failIfResolved(ret, expected), passIfRejected(ret, expected));
-        jasmine.clock().flush();
+        clock.flush();
         return ret;
     }),
 };
