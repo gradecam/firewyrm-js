@@ -31,11 +31,11 @@ describe("firewyrm", function() {
             expect(mockWyrmHole.lastMessage.args).toEqual(['New', mimetype, createArgs]);
         });
         it("should send 'Enum' message with the provided spawnId after 'New' returns", function() {
-            mockWyrmHole.lastMessage.respond('success', mockWyrmHole.spawnId);
-            expect(mockWyrmHole.lastMessage.args).toEqual('Enum', mockWyrmHole.spawnId, 0);
+            mockWyrmHole.lastMessage.respond('success', mockWyrmHole.lastSpawnId);
+            expect(mockWyrmHole.lastMessage.args).toEqual(['Enum', mockWyrmHole.lastSpawnId, 0]);
         });
         it("should ultimately resolve the queenling", function() {
-            mockWyrmHole.lastMessage.respond('success', mockWyrmHole.spawnId); // respond to "New"
+            mockWyrmHole.lastMessage.respond('success', mockWyrmHole.lastSpawnId); // respond to "New"
             mockWyrmHole.lastMessage.respond('success', enumProps); // respond to "Enum"
             expect(queenling).toBeResolved();
         });
@@ -44,7 +44,7 @@ describe("firewyrm", function() {
                 queenling = lifecycle.getResolvedQueenling(mockWyrmHole);
             });
             it("should make note of its spawnId and objectId", function() {
-                expect(queenling.spawnId).toBe(mockWyrmHole.spawnId);
+                expect(queenling.spawnId).toBe(mockWyrmHole.lastSpawnId);
                 expect(queenling.objectId).toBe(0);
             });
             it("should have a generic property getter and setter", function() {
@@ -55,6 +55,15 @@ describe("firewyrm", function() {
                 _.each(enumProps, function(prop) {
                     expect(queenling.hasOwnProperty(prop)).toBe(true);
                 });
+            });
+        });
+        describe("destroying the queenling", function() {
+            beforeEach(function() {
+                queenling = lifecycle.getResolvedQueenling(mockWyrmHole);
+            });
+            it("should send Destroy over the WyrmHole", function() {
+                queenling.destroy();
+                expect(mockWyrmHole.lastMessage.args).toEqual(['Destroy', mockWyrmHole.lastSpawnId]);
             });
         });
     });
