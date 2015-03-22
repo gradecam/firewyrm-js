@@ -5,6 +5,7 @@ var clockHelpers = require('./helpers/clock');
 var fw = require('../src/firewyrm');
 var MockWyrmHole = require('../src/mockWyrmHole');
 //var ConsoleWyrmHole = require('../src/consoleWyrmHole');
+var lifecycle = require('./helpers/lifecycle');
 
 describe("firewyrm", function() {
     beforeEach(function() {
@@ -42,12 +43,7 @@ describe("firewyrm", function() {
         });
         describe("after the queenling is resolved", function() {
             beforeEach(function() {
-                mockWyrmHole.lastMessage.respond('success', mockWyrmHole.spawnId); // respond to "New"
-                mockWyrmHole.lastMessage.respond('success', enumProps); // respond to "Enum"
-                queenling.then(function(alienWyrmling) {
-                    queenling = alienWyrmling; // this is the final resolved AlienWyrmling from initial contact
-                });
-                jasmine.clock().flush(); // make sure any promises are resolved
+                queenling = lifecycle.getResolvedQueenling(mockWyrmHole);
             });
             it("should make note of its spawnId and objectId", function() {
                 expect(queenling.spawnId).toBe(mockWyrmHole.spawnId);
