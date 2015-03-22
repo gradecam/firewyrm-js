@@ -1,21 +1,19 @@
 /* globals jasmine, beforeEach, afterEach, describe, it, expect */
 'use strict';
-var _ = require('underscore');
 var fw = require('../src/firewyrm');
-var MockWyrmHole = require('../src/mockWyrmHole');
-//var ConsoleWyrmHole = require('../src/consoleWyrmHole');
 var clock = require('./helpers/clock');
 var lifecycle = require('./helpers/lifecycle');
 
 describe("basic lifecycle", function() {
     var mockWyrmHole, queenling, createArgs, enumProps,
         mimetype = 'application/x-bigwyrm';
+
     beforeEach(function() {
         clock.install();
 
         createArgs = {};
         enumProps = ['intProp', 'stringProp', 'arrayProp', 'functionProp'];
-        mockWyrmHole = new MockWyrmHole();
+        mockWyrmHole = lifecycle.newMockWyrmHole();
         queenling = fw.create(mockWyrmHole, mimetype, createArgs);
     });
     afterEach(function() {
@@ -47,15 +45,6 @@ describe("basic lifecycle", function() {
         it("should make note of its spawnId and objectId", function() {
             expect(queenling.spawnId).toBe(mockWyrmHole.lastSpawnId);
             expect(queenling.objectId).toBe(0);
-        });
-        it("should have a generic property getter and setter", function() {
-            expect(queenling.getProperty).toEqual(jasmine.any(Function));
-            expect(queenling.setProperty).toEqual(jasmine.any(Function));
-        });
-        it("should have properties for each of the items received from Enum", function() {
-            _.each(enumProps, function(prop) {
-                expect(queenling.hasOwnProperty(prop)).toBe(true);
-            });
         });
     });
 
