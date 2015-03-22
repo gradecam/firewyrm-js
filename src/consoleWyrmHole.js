@@ -1,5 +1,5 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
-define(['./fbpromise'], function(Deferred) {
+define(['./deferred'], function(Deferred) {
 
     var ConsoleWyrmHole = function() {
         var msgIdCnt = 0;
@@ -17,6 +17,6 @@ define(['./fbpromise'], function(Deferred) {
             return dfd.promise;
         };
     };
-    
+
     return ConsoleWyrmHole;
 });

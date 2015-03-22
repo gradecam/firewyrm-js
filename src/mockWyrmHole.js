@@ -1,5 +1,5 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
-define(['./fbpromise'], function(Deferred) {
+define(['./deferred'], function(Deferred) {
     var id = 0;
     var MockWyrmHole = function() {
         var self = this;
