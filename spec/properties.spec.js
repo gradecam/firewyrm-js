@@ -19,7 +19,7 @@ describe("queenling properties", function() {
         clock.uninstall();
     });
 
-    describe("getters", function() {
+    describe("getters (simple properties)", function() {
         var getDfd;
 
         describe("getProperty", function() {
@@ -29,15 +29,35 @@ describe("queenling properties", function() {
             it("should exist as a generic getter", function() {
                 expect(queenling.getProperty).toEqual(jasmine.any(Function));
             });
-            it("should return a promise", function() {
+            it("should return a special, callable promise", function() {
                 expect(getDfd).toBeThennable();
+                expect(getDfd).toEqual(jasmine.any(Function));
             });
             it("should send GetP", function() {
                 expect(mockWyrmHole.lastMessage.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
             });
-            it("should resolve with the response", function() {
-                mockWyrmHole.lastMessage.respond(42);
-                expect(getDfd).toBeResolvedWith(42);
+
+            describe("the regular promise", function() {
+                it("should resolve with the response", function() {
+                    mockWyrmHole.lastMessage.respond(42);
+                    expect(getDfd).toBeResolvedWith(42);
+                });
+            });
+
+            describe("the return value from calling the promise", function() {
+                beforeEach(function() {
+                    mockWyrmHole.lastMessage.respond(42);
+                });
+                it("should be a promise", function() {
+                    expect(getDfd()).toBeThennable();
+                });
+                it("should ultimately reject that promise because primities aren't callable", function() {
+                    var dfdFromCallingPromise = getDfd();
+                    expect(dfdFromCallingPromise).toHaveBeenRejectedWith({
+                        "error": "could not invoke",
+                        "message": "The object is not invokable"
+                    });
+                });
             });
         });
 
@@ -51,20 +71,40 @@ describe("queenling properties", function() {
                     expect(descriptor.get).toEqual(jasmine.any(Function));
                 });
             });
-            it("should return a promise", function() {
+            it("should return a special, callable promise", function() {
                 expect(getDfd).toBeThennable();
+                expect(getDfd).toEqual(jasmine.any(Function));
             });
             it("should send GetP", function() {
                 expect(mockWyrmHole.lastMessage.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
             });
-            it("should resolve with the response", function() {
-                mockWyrmHole.lastMessage.respond(42);
-                expect(getDfd).toBeResolvedWith(42);
+
+            describe("the regular promise", function() {
+                it("should resolve with the response", function() {
+                    mockWyrmHole.lastMessage.respond(42);
+                    expect(getDfd).toBeResolvedWith(42);
+                });
+            });
+
+            describe("the return value from calling the promise", function() {
+                beforeEach(function() {
+                    mockWyrmHole.lastMessage.respond(42);
+                });
+                it("should be a promise", function() {
+                    expect(getDfd()).toBeThennable();
+                });
+                it("should ultimately reject that promise because primities aren't callable", function() {
+                    var dfdFromCallingPromise = getDfd();
+                    expect(dfdFromCallingPromise).toHaveBeenRejectedWith({
+                        "error": "could not invoke",
+                        "message": "The object is not invokable"
+                    });
+                });
             });
         });
     });
 
-    describe("setters", function() {
+    describe("setters (simple properties)", function() {
         describe("setProperty", function() {
             var setDfd;
             beforeEach(function() {
