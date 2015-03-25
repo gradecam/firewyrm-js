@@ -15,6 +15,9 @@ define(['./deferred', './tools'], function(Deferred, tools) {
                 return send(['Destroy', queenling.spawnId]);
             };
             return queenling;
+        }, function(error) {
+            console.log("CREATE ERROR:", error);
+            return Deferred.reject(error);
         });
     }
 

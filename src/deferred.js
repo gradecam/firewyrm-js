@@ -5,6 +5,18 @@ if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
     var Deferred = fbpromise.FireBreathPromise;
 
+    Deferred.when = function(val) {
+        var dfd = Deferred();
+        dfd.resolve(val);
+        return dfd.promise;
+    };
+
+    Deferred.reject = function(error) {
+        var dfd = Deferred();
+        dfd.reject(error);
+        return dfd.promise;
+    };
+
     // Converts a function that takes a callback as the last argument to a function that returns a
     // deferred object that is resolved to the callback value.
     Deferred.fn = function(obj, method) {
