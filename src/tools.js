@@ -25,27 +25,24 @@ define(['./deferred'], function(Deferred) {
             }
         };
         return send(['Enum', spawnId, objectId]).then(function(props) {
-            var prop;
             for (var i = 0; i < props.length; i++) {
-                prop = props[i];
-                Object.defineProperty(wyrmling, prop, createPropertyDefinition(wyrmling, prop));
+                createProperty(wyrmling, props[i]);
             }
             return wyrmling;
         });
     }
 
-    function createPropertyDefinition(wyrmling, prop) {
-        return {
-            writable: true,
+    function createProperty(wyrmling, prop) {
+        Object.defineProperty(wyrmling, prop, {
             enumerable: true,
             configurable: false, // don't allow it to be deleted (it isn't ours)
-            get function() {
+            get: function() {
                 return wyrmling.getProperty(prop);
             },
-            set function(val) {
+            set: function(val) {
                 return wyrmling.setProperty(prop, val);
             }
-        };
+        });
     }
 
     function isPrimitive(val) {
