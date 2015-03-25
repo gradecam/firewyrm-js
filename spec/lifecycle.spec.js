@@ -25,15 +25,15 @@ describe("basic lifecycle", function() {
             expect(queenling).toBeThennable();
         });
         it("should immediately send the mimetype and params over the WyrmHole", function() {
-            expect(mockWyrmHole.lastMessage.args).toEqual(['New', mimetype, createArgs]);
+            expect(mockWyrmHole.lastOutbound.args).toEqual(['New', mimetype, createArgs]);
         });
         it("should send 'Enum' message with the provided spawnId after 'New' returns", function() {
-            mockWyrmHole.lastMessage.respond('success', mockWyrmHole.lastSpawnId);
-            expect(mockWyrmHole.lastMessage.args).toEqual(['Enum', mockWyrmHole.lastSpawnId, 0]);
+            mockWyrmHole.lastOutbound.respond('success', mockWyrmHole.lastSpawnId);
+            expect(mockWyrmHole.lastOutbound.args).toEqual(['Enum', mockWyrmHole.lastSpawnId, 0]);
         });
         it("should ultimately resolve the queenling", function() {
-            mockWyrmHole.lastMessage.respond('success', mockWyrmHole.lastSpawnId); // respond to "New"
-            mockWyrmHole.lastMessage.respond('success', enumProps); // respond to "Enum"
+            mockWyrmHole.lastOutbound.respond('success', mockWyrmHole.lastSpawnId); // respond to "New"
+            mockWyrmHole.lastOutbound.respond('success', enumProps); // respond to "Enum"
             expect(queenling).toBeResolved();
         });
     });
@@ -54,7 +54,7 @@ describe("basic lifecycle", function() {
         });
         it("should send Destroy over the WyrmHole", function() {
             queenling.destroy();
-            expect(mockWyrmHole.lastMessage.args).toEqual(['Destroy', mockWyrmHole.lastSpawnId]);
+            expect(mockWyrmHole.lastOutbound.args).toEqual(['Destroy', mockWyrmHole.lastSpawnId]);
         });
     });
 

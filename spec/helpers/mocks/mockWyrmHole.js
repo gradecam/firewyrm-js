@@ -4,13 +4,13 @@ define(['../../../src/deferred', '../clock'], function(Deferred, clock) {
     var MockWyrmHole = function() {
         var self = this;
         self.lastSpawnId = ++id;
-
-        self.lastMessage = {
+        self.lastOutbound = {
             respond: function() {}
         };
 
+        // called by FireWyrmJS when it wants to send messages to the other side
         self.sendMessage = function(msg, cb) {
-            self.lastMessage = {
+            self.lastOutbound = {
                 args: msg,
                 cb: cb,
                 respond: function() {

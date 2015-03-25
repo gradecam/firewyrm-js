@@ -21,8 +21,8 @@ function getResolvedQueenling(wyrmHole, mimetype, args, enumProps) {
     enumProps = enumProps || defaults.newQueenlingProps;
 
     var queenling = FireWyrmJS.create(wyrmHole, mimetype, args);
-    wyrmHole.lastMessage.respond('success', wyrmHole.lastSpawnId); // respond to "New"
-    wyrmHole.lastMessage.respond('success', enumProps); // respond to "Enum"
+    wyrmHole.lastOutbound.respond('success', wyrmHole.lastSpawnId); // respond to "New"
+    wyrmHole.lastOutbound.respond('success', enumProps); // respond to "Enum"
     queenling.then(function(alienWyrmling) {
         queenling = alienWyrmling; // this is the final resolved AlienWyrmling from initial contact
         return alienWyrmling;

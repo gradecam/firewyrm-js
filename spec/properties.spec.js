@@ -34,19 +34,19 @@ describe("queenling properties", function() {
                 expect(getDfd).toEqual(jasmine.any(Function));
             });
             it("should send GetP", function() {
-                expect(mockWyrmHole.lastMessage.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
+                expect(mockWyrmHole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
             });
 
             describe("the regular promise", function() {
                 it("should resolve with the response", function() {
-                    mockWyrmHole.lastMessage.respond(42);
+                    mockWyrmHole.lastOutbound.respond('success', 42);
                     expect(getDfd).toBeResolvedWith(42);
                 });
             });
 
             describe("the return value from calling the promise", function() {
                 beforeEach(function() {
-                    mockWyrmHole.lastMessage.respond(42);
+                    mockWyrmHole.lastOutbound.respond('success', 42);
                 });
                 it("should be a promise", function() {
                     expect(getDfd()).toBeThennable();
@@ -76,19 +76,19 @@ describe("queenling properties", function() {
                 expect(getDfd).toEqual(jasmine.any(Function));
             });
             it("should send GetP", function() {
-                expect(mockWyrmHole.lastMessage.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
+                expect(mockWyrmHole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
             });
 
             describe("the regular promise", function() {
                 it("should resolve with the response", function() {
-                    mockWyrmHole.lastMessage.respond(42);
+                    mockWyrmHole.lastOutbound.respond('success', 42);
                     expect(getDfd).toBeResolvedWith(42);
                 });
             });
 
             describe("the return value from calling the promise", function() {
                 beforeEach(function() {
-                    mockWyrmHole.lastMessage.respond(42);
+                    mockWyrmHole.lastOutbound.respond('success', 42);
                 });
                 it("should be a promise", function() {
                     expect(getDfd()).toBeThennable();
@@ -117,10 +117,10 @@ describe("queenling properties", function() {
                 expect(setDfd).toBeThennable();
             });
             it("should send SetP", function() {
-                expect(mockWyrmHole.lastMessage.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 42]);
+                expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 42]);
             });
             it("should resolve when done", function() {
-                mockWyrmHole.lastMessage.respond();
+                mockWyrmHole.lastOutbound.respond('success', null);
                 expect(setDfd).toBeResolved();
             });
         });
@@ -134,7 +134,7 @@ describe("queenling properties", function() {
             });
             it("should send SetP", function() {
                 queenling[prop] = 42;
-                expect(mockWyrmHole.lastMessage.args).toEqual(['SetP', queenling.spawnId, queenling.objId, 42]);
+                expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objId, 42]);
             });
             // we don't get meaningful return values from a setter, so no use to test promises here...
         });
