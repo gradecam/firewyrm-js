@@ -6,22 +6,15 @@ define(['./deferred', './tools'], function(Deferred, tools) {
         create: create
     };
 
-    function create(wyrmHole, mimetype, args) {
-        var send = Deferred.fn(wyrmHole, 'sendMessage'),
-            objectId = 0,
-            spawnId;
-        return send(['New', mimetype, args]).then(function(id) {
-            spawnId = id;
-            return send(['Enum', spawnId, objectId]); // enum the default object
-        }).then(function(props) {
-            // TODO: return something useful
-            return {
-                spawnId: spawnId,
-                objectId: objectId,
-                destroy: function() {
-                    return send(['Destroy', spawnId]);
-                }
+    function create(wyrmhole, mimetype, args) {
+        var send = Deferred.fn(wyrmhole, 'sendMessage');
+        return send(['New', mimetype, args]).then(function(spawnId) {
+            return tools.wrapAlienWyrmling(wyrmhole, spawnId, 0);
+        }).then(function(queenling) {
+            queenling.destroy = function() {
+                return send(['Destroy', queenling.spawnId]);
             };
+            return queenling;
         });
     }
 
