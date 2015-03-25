@@ -36,15 +36,6 @@ describe("queenling properties", function() {
                 mockWyrmHole.lastOutbound.respond('success', 42);
                 expect(getDfd).toBeResolvedWith(42);
             });
-
-            describe("the return value from calling the promise", function() {
-                beforeEach(function() {
-                    mockWyrmHole.lastOutbound.respond('success', 42);
-                });
-                it("should be a promise", function() {
-                    expect(getDfd()).toBeThennable();
-                });
-            });
         });
 
         describe("specific property getters", function() {
@@ -63,15 +54,6 @@ describe("queenling properties", function() {
             it("should resolve with the response", function() {
                 mockWyrmHole.lastOutbound.respond('success', 42);
                 expect(getDfd).toBeResolvedWith(42);
-            });
-
-            describe("the return value from calling the promise", function() {
-                beforeEach(function() {
-                    mockWyrmHole.lastOutbound.respond('success', 42);
-                });
-                it("should be a promise", function() {
-                    expect(getDfd()).toBeThennable();
-                });
             });
         });
     });
