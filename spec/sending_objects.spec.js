@@ -2,6 +2,7 @@
 'use strict';
 var clock = require('./helpers/clock');
 var defaults = require('./helpers/defaults');
+var fw = require('../src/firewyrm');
 var lifecycle = require('./helpers/lifecycle');
 
 describe("sending objects across the WyrmHole", function() {
@@ -123,6 +124,37 @@ describe("sending objects across the WyrmHole", function() {
                     expect(mockWyrmHole.lastInbound.response).toBe(true);
                 });
             });
+        });
+    });
+
+    describe("sending objects by value", function() {
+        var complexArray;
+        beforeEach(function() {
+            complexArray = [42, { isObj: true }, { complexObject: { hasNested: { properties: true } } } ];
+        });
+        it("should return a special value when asVal is called", function() {
+            var complexValue = fw.asVal(complexArray);
+            expect(complexValue).toEqual({$type: 'json', data: complexArray});
+        });
+        it("should preserve the special value when used with SetP", function() {
+            var complexValue = fw.asVal(complexArray);
+            queenling.setProperty(prop, complexValue);
+            expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, complexValue]);
+        });
+        it("should send primitives plainly even if asVal is called", function() {
+            expect(fw.asVal(1)).toBe(1);
+            queenling.setProperty(prop, fw.asVal(1));
+            expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 1]);
+
+            expect(fw.asVal('string')).toBe('string');
+            queenling.setProperty(prop, fw.asVal('string'));
+            expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 'string']);
+            expect(fw.asVal(false)).toBe(false);
+            queenling.setProperty(prop, fw.asVal(false));
+            expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, false]);
+            expect(fw.asVal(null)).toBe(null);
+            queenling.setProperty(prop, fw.asVal(null));
+            expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, null]);
         });
     });
 
