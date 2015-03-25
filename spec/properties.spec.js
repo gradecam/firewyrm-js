@@ -29,19 +29,12 @@ describe("queenling properties", function() {
             it("should exist as a generic getter", function() {
                 expect(queenling.getProperty).toEqual(jasmine.any(Function));
             });
-            it("should return a special, callable promise", function() {
-                expect(getDfd).toBeThennable();
-                expect(getDfd).toEqual(jasmine.any(Function));
-            });
             it("should send GetP", function() {
                 expect(mockWyrmHole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
             });
-
-            describe("the regular promise", function() {
-                it("should resolve with the response", function() {
-                    mockWyrmHole.lastOutbound.respond('success', 42);
-                    expect(getDfd).toBeResolvedWith(42);
-                });
+            it("should resolve with the response", function() {
+                mockWyrmHole.lastOutbound.respond('success', 42);
+                expect(getDfd).toBeResolvedWith(42);
             });
 
             describe("the return value from calling the promise", function() {
@@ -50,13 +43,6 @@ describe("queenling properties", function() {
                 });
                 it("should be a promise", function() {
                     expect(getDfd()).toBeThennable();
-                });
-                it("should ultimately reject that promise because primities aren't callable", function() {
-                    var dfdFromCallingPromise = getDfd();
-                    expect(dfdFromCallingPromise).toHaveBeenRejectedWith({
-                        "error": "could not invoke",
-                        "message": "The object is not invokable"
-                    });
                 });
             });
         });
@@ -71,19 +57,12 @@ describe("queenling properties", function() {
                     expect(descriptor.get).toEqual(jasmine.any(Function));
                 });
             });
-            it("should return a special, callable promise", function() {
-                expect(getDfd).toBeThennable();
-                expect(getDfd).toEqual(jasmine.any(Function));
-            });
             it("should send GetP", function() {
                 expect(mockWyrmHole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
             });
-
-            describe("the regular promise", function() {
-                it("should resolve with the response", function() {
-                    mockWyrmHole.lastOutbound.respond('success', 42);
-                    expect(getDfd).toBeResolvedWith(42);
-                });
+            it("should resolve with the response", function() {
+                mockWyrmHole.lastOutbound.respond('success', 42);
+                expect(getDfd).toBeResolvedWith(42);
             });
 
             describe("the return value from calling the promise", function() {
@@ -92,13 +71,6 @@ describe("queenling properties", function() {
                 });
                 it("should be a promise", function() {
                     expect(getDfd()).toBeThennable();
-                });
-                it("should ultimately reject that promise because primities aren't callable", function() {
-                    var dfdFromCallingPromise = getDfd();
-                    expect(dfdFromCallingPromise).toHaveBeenRejectedWith({
-                        "error": "could not invoke",
-                        "message": "The object is not invokable"
-                    });
                 });
             });
         });
