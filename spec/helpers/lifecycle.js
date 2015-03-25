@@ -1,5 +1,5 @@
 var FireWyrmJS = require('../../src/firewyrm');
-var MockWyrmHole = require('../../src/mockWyrmHole');
+var MockWyrmHole = require('./mocks/mockWyrmHole');
 var clock = require('./clock');
 var defaults = require('./defaults');
 

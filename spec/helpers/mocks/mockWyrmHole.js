@@ -1,5 +1,5 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
-define(['./deferred', '../spec/helpers/clock'], function(Deferred, clock) {
+define(['../../../src/deferred', '../clock'], function(Deferred, clock) {
     var id = 0;
     var MockWyrmHole = function() {
         var self = this;

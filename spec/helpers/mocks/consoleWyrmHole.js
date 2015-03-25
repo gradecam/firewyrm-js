@@ -1,5 +1,5 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
-define(['./deferred'], function(Deferred) {
+define(['../../../src/deferred'], function(Deferred) {
 
     var ConsoleWyrmHole = function() {
         var msgIdCnt = 0;
