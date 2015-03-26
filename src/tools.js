@@ -10,20 +10,25 @@ define(['./deferred'], function(Deferred) {
     // performs Enum and creates the getters / setters / etc.
     function wrapAlienWyrmling(wyrmhole, spawnId, objectId) {
         var send = Deferred.fn(wyrmhole, 'sendMessage');
-        var wyrmling = {
-            spawnId: spawnId,
-            objectId: objectId,
-            getProperty: function(prop) {
+        var wyrmling = function() {
+            var args = [''].concat(Array.prototype.slice.call(arguments, 0));
+            return wyrmling.invoke.apply(wyrmling, args);
+        };
+        // Add our helper properties (non-writable, non-enumerable, non-configurable)
+        Object.defineProperties(wyrmling, {
+            spawnId: { value: spawnId },
+            objectId: { value: objectId },
+            getProperty: { value: function(prop) {
                 return send(['GetP', spawnId, objectId, prop]);
-            },
-            setProperty: function(prop, val) {
+            }},
+            setProperty: { value: function(prop, val) {
                 return send(['SetP', spawnId, objectId, prop, val]);
-            },
-            invoke: function(prop) {
+            }},
+            invoke: { value: function(prop) {
                 var args = Array.prototype.slice.call(arguments, 1);
                 return send(['Invoke', spawnId, objectId, prop, args]);
-            }
-        };
+            }}
+        });
         return send(['Enum', spawnId, objectId]).then(function(props) {
             for (var i = 0; i < props.length; i++) {
                 createProperty(wyrmling, props[i]);

@@ -46,6 +46,13 @@ describe("basic lifecycle", function() {
             expect(queenling.spawnId).toBe(mockWyrmHole.lastSpawnId);
             expect(queenling.objectId).toBe(0);
         });
+        it("should be callable", function() {
+            expect(queenling).toEqual(jasmine.any(Function));
+        });
+        it("should send 'Invoke' if called", function() {
+            queenling(1,2);
+            expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, '', [1,2]]);
+        });
     });
 
     describe("destroying the queenling", function() {
