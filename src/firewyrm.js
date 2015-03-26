@@ -11,9 +11,11 @@ define(['./deferred', './tools'], function(Deferred, tools) {
         return send(['New', mimetype, args]).then(function(spawnId) {
             return tools.wrapAlienWyrmling(wyrmhole, spawnId, 0);
         }).then(function(queenling) {
-            queenling.destroy = function() {
-                return send(['Destroy', queenling.spawnId]);
-            };
+            Object.defineProperty(queenling, 'destroy', {
+                value: function() {
+                    return send(['Destroy', queenling.spawnId]);
+                }
+            });
             return queenling;
         }, function(error) {
             console.log("CREATE ERROR:", error);
