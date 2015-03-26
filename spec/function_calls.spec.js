@@ -2,18 +2,18 @@
 'use strict';
 var clock = require('./helpers/clock');
 var defaults = require('./helpers/defaults');
-var fw = require('../src/firewyrm');
+var FireWyrmJS = require('../src/firewyrm');
 var lifecycle = require('./helpers/lifecycle');
 
-describe("invoking functions across the WyrmHole", function() {
-    var mockWyrmHole, queenling,
+describe("invoking functions across the Wyrmhole", function() {
+    var mockWyrmhole, queenling,
         prop = defaults.newQueenlingProps[3]; // functionProp
 
     beforeEach(function() {
         clock.install();
 
-        mockWyrmHole = lifecycle.newMockWyrmHole();
-        queenling = lifecycle.getResolvedQueenling(mockWyrmHole);
+        mockWyrmhole = lifecycle.newMockWyrmhole();
+        queenling = lifecycle.getResolvedQueenling(mockWyrmhole);
     });
     afterEach(function() {
         clock.uninstall();
@@ -31,10 +31,10 @@ describe("invoking functions across the WyrmHole", function() {
         });
         it("should invoke GetP", function() {
             var getDfd = queenling.getProperty(prop);
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
-            mockWyrmHole.lastOutbound = {};
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
+            mockWyrmhole.lastOutbound = {};
             getDfd = queenling[prop];
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
         });
 
         describe("special, callable promises", function() {
@@ -42,8 +42,8 @@ describe("invoking functions across the WyrmHole", function() {
                 queenling[prop](6,7);
                 var fnSpawnId = Math.floor(Math.random()*100);
                 var fnObjectId = Math.floor(Math.random()*100);
-                mockWyrmHole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]}); // mock success and resolve any promises
-                expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', jasmine.any(Array)]);
+                mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]}); // mock success and resolve any promises
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', jasmine.any(Array)]);
             });
             it("should return promises when invoked", function() {
                 var invokeDfd = queenling.getProperty(prop)(6,7);
@@ -56,16 +56,16 @@ describe("invoking functions across the WyrmHole", function() {
                 var invokeDfd = queenling[prop](6,7);
                 var fnSpawnId = Math.floor(Math.random()*100);
                 var fnObjectId = Math.floor(Math.random()*100);
-                mockWyrmHole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]}); // mock success and resolve any promises
-                mockWyrmHole.lastOutbound.success(false);
+                mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]}); // mock success and resolve any promises
+                mockWyrmhole.lastOutbound.success(false);
                 expect(invokeDfd).toBeResolvedWith(false);
             });
             it("should resolve string values, too", function() {
                 var invokeDfd = queenling[prop](6,7);
                 var fnSpawnId = Math.floor(Math.random()*100);
                 var fnObjectId = Math.floor(Math.random()*100);
-                mockWyrmHole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]}); // mock success and resolve any promises
-                mockWyrmHole.lastOutbound.success('I am a string');
+                mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]}); // mock success and resolve any promises
+                mockWyrmhole.lastOutbound.success('I am a string');
                 expect(invokeDfd).toBeResolvedWith('I am a string');
             });
         });
@@ -78,50 +78,70 @@ describe("invoking functions across the WyrmHole", function() {
             // respond to GetP and resolve any resulting promises
             fnSpawnId = Math.floor(Math.random()*100);
             fnObjectId = Math.floor(Math.random()*100);
-            mockWyrmHole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]});
+            mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]});
         }
         it("should properly pass zero arguments", function() {
             invokeWithArguments();
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', []]);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', []]);
         });
         it("should properly pass one argument", function() {
             invokeWithArguments(false);
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', [false]]);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', [false]]);
         });
         it("should properly pass multiple arguments", function() {
             invokeWithArguments('string', 3.6, null, true);
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', ['string', 3.6, null, true]]);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', ['string', 3.6, null, true]]);
         });
 
         describe("passing complex arguments to a function", function() {
             it("should default to pass as ref", function() {
                 invokeWithArguments(3, { isObj: true }, true);
-                expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', [
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', [
                     3,
                     { $type: 'ref', data: [jasmine.any(Number), jasmine.any(Number)] },
                     true
                 ]]);
             });
             it("should pass as val if requested", function() {
-                invokeWithArguments(3, fw.asVal({ isObj: true }), true);
+                invokeWithArguments(3, FireWyrmJS.asVal({ isObj: true }), true);
                 clock.flush();
-                expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', [
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', [
                     3,
                     { $type: 'json', data: { isObj: true } },
                     true
                 ]]);
             });
+
+
+            // TODO TODO TODO: talk to Richard about this; is my initial assumption correct?
+            //                 The more I think about it, the more I suspect we might instead
+            //                 be sending along some weird object reference we created for their
+            //                 alien wyrmling. But then, how do they ever get anything meaningul
+            //                 back from us about it? Any time they ask for it, we're going to
+            //                 see that it is a reference that we have to wrap in another
+            //                 reference to respond to...
+            //
+            //                 Either I was right initially, or I'm overthinking it.
+
+            //it("should pass objects that are already references untouched", function() {
+                //invokeWithArguments(3, { $type: 'ref', data: [99, 100] }, true);
+                //expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', [
+                    //3,
+                    //{ $type: 'ref', data: [99, 100] },
+                    //true
+                //]]);
+            //});
         });
     });
 
     describe("queenling.invoke", function() {
         it("should send 'Invoke' without first sending 'GetP'", function() {
             queenling.invoke(prop);
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, prop, []]);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, prop, []]);
         });
         it("should accept n arguments and pass them along", function() {
             queenling.invoke(prop, null, 'string', { isObj: true });
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, prop, [
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, prop, [
                 null,
                 'string',
                 { $type: 'ref', data: [jasmine.any(Number), jasmine.any(Number)] }
@@ -133,7 +153,7 @@ describe("invoking functions across the WyrmHole", function() {
         });
         it("should ultimately resolve to the return value", function() {
             var invokeDfd = queenling.invoke(prop, 6, 7);
-            mockWyrmHole.lastOutbound.success(42);
+            mockWyrmhole.lastOutbound.success(42);
             expect(invokeDfd).toBeResolvedWith(42);
         });
     });
@@ -145,8 +165,8 @@ describe("invoking functions across the WyrmHole", function() {
     describe("trying to invoke a primitive property", function() {
         it("should reject without even sending the 'Invoke' message", function() {
             var invokeDfd = queenling.intProp();
-            mockWyrmHole.lastOutbound.success(42);
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, 'intProp']);
+            mockWyrmhole.lastOutbound.success(42);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, 'intProp']);
             expect(invokeDfd).toHaveBeenRejectedWith({
                 error: 'could not invoke',
                 message: 'The object is not invokable'

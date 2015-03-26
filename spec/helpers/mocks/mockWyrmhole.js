@@ -1,7 +1,7 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(['../../../src/deferred', '../clock'], function(Deferred, clock) {
     var id = 0;
-    var MockWyrmHole = function() {
+    var MockWyrmhole = function() {
         var self = this;
         self.lastSpawnId = ++id;
         self.lastOutbound = {
@@ -57,5 +57,5 @@ define(['../../../src/deferred', '../clock'], function(Deferred, clock) {
         };
     };
 
-    return MockWyrmHole;
+    return MockWyrmhole;
 });

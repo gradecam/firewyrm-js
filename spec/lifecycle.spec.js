@@ -1,20 +1,23 @@
 /* globals jasmine, beforeEach, afterEach, describe, it, expect */
 'use strict';
-var fw = require('../src/firewyrm');
+var FireWyrmJS = require('../src/firewyrm');
 var clock = require('./helpers/clock');
 var lifecycle = require('./helpers/lifecycle');
 
 describe("basic lifecycle", function() {
-    var mockWyrmHole, queenling, createArgs, enumProps,
+    console.log(FireWyrmJS);
+
+    var fw, mockWyrmhole, queenling, createArgs, enumProps,
         mimetype = 'application/x-bigwyrm';
 
     beforeEach(function() {
         clock.install();
 
+        mockWyrmhole = lifecycle.newMockWyrmhole();
+        fw = new FireWyrmJS(mockWyrmhole);
         createArgs = {};
         enumProps = ['intProp', 'stringProp', 'arrayProp', 'functionProp'];
-        mockWyrmHole = lifecycle.newMockWyrmHole();
-        queenling = fw.create(mockWyrmHole, mimetype, createArgs);
+        queenling = fw.create(mimetype, createArgs);
     });
     afterEach(function() {
         clock.uninstall();
@@ -24,26 +27,26 @@ describe("basic lifecycle", function() {
         it("should return a thennable", function() {
             expect(queenling).toBeThennable();
         });
-        it("should immediately send the mimetype and params over the WyrmHole", function() {
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['New', mimetype, createArgs]);
+        it("should immediately send the mimetype and params over the Wyrmhole", function() {
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['New', mimetype, createArgs]);
         });
         it("should send 'Enum' message with the provided spawnId after 'New' returns", function() {
-            mockWyrmHole.lastOutbound.respond('success', mockWyrmHole.lastSpawnId);
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['Enum', mockWyrmHole.lastSpawnId, 0]);
+            mockWyrmhole.lastOutbound.respond('success', mockWyrmhole.lastSpawnId);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', mockWyrmhole.lastSpawnId, 0]);
         });
         it("should ultimately resolve the queenling", function() {
-            mockWyrmHole.lastOutbound.respond('success', mockWyrmHole.lastSpawnId); // respond to "New"
-            mockWyrmHole.lastOutbound.respond('success', enumProps); // respond to "Enum"
+            mockWyrmhole.lastOutbound.respond('success', mockWyrmhole.lastSpawnId); // respond to "New"
+            mockWyrmhole.lastOutbound.respond('success', enumProps); // respond to "Enum"
             expect(queenling).toBeResolved();
         });
     });
 
     describe("after the queenling is resolved", function() {
         beforeEach(function() {
-            queenling = lifecycle.getResolvedQueenling(mockWyrmHole);
+            queenling = lifecycle.getResolvedQueenling(mockWyrmhole);
         });
         it("should make note of its spawnId and objectId", function() {
-            expect(queenling.spawnId).toBe(mockWyrmHole.lastSpawnId);
+            expect(queenling.spawnId).toBe(mockWyrmhole.lastSpawnId);
             expect(queenling.objectId).toBe(0);
         });
         it("should be callable", function() {
@@ -51,17 +54,17 @@ describe("basic lifecycle", function() {
         });
         it("should send 'Invoke' if called", function() {
             queenling(1,2);
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, '', [1,2]]);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, '', [1,2]]);
         });
     });
 
     describe("destroying the queenling", function() {
         beforeEach(function() {
-            queenling = lifecycle.getResolvedQueenling(mockWyrmHole);
+            queenling = lifecycle.getResolvedQueenling(mockWyrmhole);
         });
-        it("should send Destroy over the WyrmHole", function() {
+        it("should send Destroy over the Wyrmhole", function() {
             queenling.destroy();
-            expect(mockWyrmHole.lastOutbound.args).toEqual(['Destroy', mockWyrmHole.lastSpawnId]);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['Destroy', mockWyrmhole.lastSpawnId]);
         });
     });
 

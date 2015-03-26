@@ -1,7 +1,7 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(['../../../src/deferred'], function(Deferred) {
 
-    var ConsoleWyrmHole = function() {
+    var ConsoleWyrmhole = function() {
         var msgIdCnt = 0;
         var dfds = {};
 
@@ -18,5 +18,5 @@ define(['../../../src/deferred'], function(Deferred) {
         };
     };
 
-    return ConsoleWyrmHole;
+    return ConsoleWyrmhole;
 });

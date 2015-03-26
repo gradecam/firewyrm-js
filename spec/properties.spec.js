@@ -6,14 +6,14 @@ var defaults = require('./helpers/defaults');
 var lifecycle = require('./helpers/lifecycle');
 
 describe("queenling properties", function() {
-    var mockWyrmHole, queenling,
+    var mockWyrmhole, queenling,
         prop = defaults.newQueenlingProps[0];
 
     beforeEach(function() {
         clock.install();
 
-        mockWyrmHole = lifecycle.newMockWyrmHole();
-        queenling = lifecycle.getResolvedQueenling(mockWyrmHole);
+        mockWyrmhole = lifecycle.newMockWyrmhole();
+        queenling = lifecycle.getResolvedQueenling(mockWyrmhole);
     });
     afterEach(function() {
         clock.uninstall();
@@ -30,10 +30,10 @@ describe("queenling properties", function() {
                 expect(queenling.getProperty).toEqual(jasmine.any(Function));
             });
             it("should send GetP", function() {
-                expect(mockWyrmHole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
             });
             it("should resolve with the response", function() {
-                mockWyrmHole.lastOutbound.respond('success', 42);
+                mockWyrmhole.lastOutbound.respond('success', 42);
                 expect(getDfd).toBeResolvedWith(42);
             });
         });
@@ -49,10 +49,10 @@ describe("queenling properties", function() {
                 });
             });
             it("should send GetP", function() {
-                expect(mockWyrmHole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
             });
             it("should resolve with the response", function() {
-                mockWyrmHole.lastOutbound.respond('success', 42);
+                mockWyrmhole.lastOutbound.respond('success', 42);
                 expect(getDfd).toBeResolvedWith(42);
             });
         });
@@ -71,14 +71,14 @@ describe("queenling properties", function() {
                 expect(setDfd).toBeThennable();
             });
             it("should send SetP", function() {
-                expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 42]);
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 42]);
             });
             it("should resolve with return when done", function() {
-                mockWyrmHole.lastOutbound.respond('success', null);
+                mockWyrmhole.lastOutbound.respond('success', null);
                 expect(setDfd).toBeResolvedWith(null);
             });
             it("should reject with error message if failed", function() {
-                mockWyrmHole.lastOutbound.error('could not set property', 'Property is read-only');
+                mockWyrmhole.lastOutbound.error('could not set property', 'Property is read-only');
                 expect(setDfd).toBeRejectedWith({error: 'could not set property', message: 'Property is read-only'});
             });
         });
@@ -92,7 +92,7 @@ describe("queenling properties", function() {
             });
             it("should send SetP", function() {
                 queenling[prop] = 42;
-                expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 42]);
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 42]);
             });
             // we don't get meaningful return values from a setter, so no use to test promises here...
         });
