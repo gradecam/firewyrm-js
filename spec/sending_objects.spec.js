@@ -57,26 +57,6 @@ describe("sending objects across the Wyrmhole", function() {
             objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
             mockWyrmhole.lastOutbound.success(null); // mimic success and finish processing any callbacks
         });
-        it("should respond to 'Enum' requests for the sent object", function() {
-            mockWyrmhole.triggerInbound(['Enum', objSpawnId, objObjectId]);
-            expect(mockWyrmhole.lastInbound.status).toBe('success');
-            expect(mockWyrmhole.lastInbound.response).toEqual(['0','1','2','length']);
-        });
-        it("should respond to 'GetP' requests for the sent object", function() {
-            mockWyrmhole.triggerInbound(['GetP', objSpawnId, objObjectId, '0']);
-            expect(mockWyrmhole.lastInbound.status).toBe('success');
-            expect(mockWyrmhole.lastInbound.response).toEqual(42);
-        });
-        it("should respond to 'SetP' requests for the sent object", function() {
-            mockWyrmhole.triggerInbound(['SetP', objSpawnId, objObjectId, '0', 24]);
-            expect(mockWyrmhole.lastInbound.status).toBe('success');
-            expect(mockWyrmhole.lastInbound.response).toBe(null);
-        });
-        it("should respond to 'RelObj' requests for the sent object", function() {
-            mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
-            expect(mockWyrmhole.lastInbound.status).toBe('success');
-            expect(mockWyrmhole.lastInbound.response).toBe(null);
-        });
 
         describe("after the object has been released", function() {
             beforeEach(function() {
@@ -127,6 +107,159 @@ describe("sending objects across the Wyrmhole", function() {
                     expect(mockWyrmhole.lastInbound.status).toBe('success');
                     expect(mockWyrmhole.lastInbound.response).toBe(true);
                 });
+            });
+        });
+    });
+
+    describe("scripting objects that have been sent by reference", function() {
+        var objSpawnId, objObjectId;
+        describe("arrays", function() {
+            beforeEach(function() {
+                queenling.setProperty(prop, [9,8,function() { return 42; }]);
+                clock.flush();
+                objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
+                objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
+                mockWyrmhole.lastOutbound.success(null); // mimic success and finish processing any callbacks
+            });
+            it("'Enum' should return each index and the length", function() {
+                mockWyrmhole.triggerInbound(['Enum', objSpawnId, objObjectId]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toEqual(['0','1','2','length']);
+            });
+            it("'GetP' should return the value", function() {
+                mockWyrmhole.triggerInbound(['GetP', objSpawnId, objObjectId, '0']);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toEqual(9);
+            });
+            it("'DelP' should return null", function() {
+                mockWyrmhole.triggerInbound(['DelP', objSpawnId, objObjectId, '0']);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toEqual(null);
+            });
+            it("'SetP' should return null", function() {
+                mockWyrmhole.triggerInbound(['SetP', objSpawnId, objObjectId, '0', 24]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toBe(null);
+            });
+            it("'RelObj' should succeed", function() {
+                mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toBe(null);
+            });
+            it("'Invoke' should fail", function() {
+                mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, '', []]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not invoke object', message: 'Object is not callable' });
+            });
+            it("'Invoke' should fail for non-function properties", function() {
+                mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, '0', []]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not invoke property', message: 'Property is not callable' });
+            });
+            it("'Invoke' should succeed for function properties", function() {
+                mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, '2', []]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toBe(42);
+            });
+        });
+
+        describe("objects", function() {
+            beforeEach(function() {
+                queenling.setProperty(prop, { isObj: true, strVal: 'string', fn: function() { return 42; }});
+                clock.flush();
+                objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
+                objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
+                mockWyrmhole.lastOutbound.success(null); // mimic success and finish processing any callbacks
+            });
+            it("'Enum' should return each index and the length", function() {
+                mockWyrmhole.triggerInbound(['Enum', objSpawnId, objObjectId]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toEqual(['isObj', 'strVal', 'fn']);
+            });
+            it("'GetP' should return the value", function() {
+                mockWyrmhole.triggerInbound(['GetP', objSpawnId, objObjectId, 'strVal']);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toEqual('string');
+            });
+            it("'DelP' should return null", function() {
+                mockWyrmhole.triggerInbound(['DelP', objSpawnId, objObjectId, 'isObj']);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toEqual(null);
+            });
+            it("'SetP' should return null", function() {
+                mockWyrmhole.triggerInbound(['SetP', objSpawnId, objObjectId, 'isObj', 24]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toBe(null);
+            });
+            it("'RelObj' should succeed", function() {
+                mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toBe(null);
+            });
+            it("'Invoke' should fail", function() {
+                mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, '', []]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not invoke object', message: 'Object is not callable' });
+            });
+            it("'Invoke' should fail for non-function properties", function() {
+                mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, 'isObj', []]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not invoke property', message: 'Property is not callable' });
+            });
+            it("'Invoke' should succeed for function properties", function() {
+                mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, 'fn', []]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toBe(42);
+            });
+        });
+
+        describe("functions", function() {
+            beforeEach(function() {
+                queenling.setProperty(prop, function add(a,b,c) { return 0 + a + b + c; });
+                clock.flush();
+                objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
+                objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
+                mockWyrmhole.lastOutbound.success(null); // mimic success and finish processing any callbacks
+            });
+            it("'Enum' should return length", function() {
+                mockWyrmhole.triggerInbound(['Enum', objSpawnId, objObjectId]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toEqual(['length']);
+            });
+            it("'GetP' length should return the number of arguments supported", function() {
+                mockWyrmhole.triggerInbound(['GetP', objSpawnId, objObjectId, 'length']);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toEqual(3);
+            });
+            it("'GetP' on other properties should fail", function() {
+                mockWyrmhole.triggerInbound(['GetP', objSpawnId, objObjectId, 'otherProperty']);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not get property', message: 'Property does not exist on this object' });
+            });
+            it("'DelP' should fail", function() {
+                mockWyrmhole.triggerInbound(['DelP', objSpawnId, objObjectId, 'isObj']);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not delete property', message: 'Property does not exist on this object' });
+            });
+            it("'SetP' should fail", function() {
+                mockWyrmhole.triggerInbound(['SetP', objSpawnId, objObjectId, 'isObj', 24]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not set property', message: 'Property does not exist on this object' });
+            });
+            it("'RelObj' should succeed", function() {
+                mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toBe(null);
+            });
+            it("'Invoke' should succeed", function() {
+                mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, '', [1,2,3]]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                expect(mockWyrmhole.lastInbound.response).toBe(6);
+            });
+            it("'Invoke' should fail for non-function properties", function() {
+                mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, 'isObj', []]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not invoke property', message: 'Property does not exist on this object' });
             });
         });
     });

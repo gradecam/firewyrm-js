@@ -117,10 +117,13 @@ define(['./deferred'], function(Deferred) {
             case 'Enum':
             case 'RelObj':
                 return msg.length === 3 && isNumber(msg[1]) && isNumber(msg[2]);
+            case 'DelP':
             case 'GetP':
                 return msg.length === 4 && isNumber(msg[1]) && isNumber(msg[2]) && isString(msg[3]);
             case 'SetP':
                 return msg.length === 5 && isNumber(msg[1]) && isNumber(msg[2]) && isString(msg[3]);
+            case 'Invoke':
+                return msg.length === 5 && isNumber(msg[1]) && isNumber(msg[2]) && isString(msg[3]) && isArray(msg[4]);
         }
     }
     function getWyrmlingStoreForMessage(baseWyrmlingStore, msg) {
@@ -140,9 +143,11 @@ define(['./deferred'], function(Deferred) {
         }
         switch (msg[0]) {
             case 'Enum': return handleEnum(obj, cb);
+            case 'DelP': return handleDelP(store, obj, msg[3], cb);
             case 'GetP': return handleGetP(store, obj, msg[3], cb);
             case 'SetP': return handleSetP(wyrmhole, store, obj, msg[3], msg[4], cb);
             case 'RelObj': return handleRelObj(store, msg[2], cb);
+            case 'Invoke': return handleInvoke(wyrmhole, store, obj, msg[3], msg[4], cb);
         }
     }
     function handleEnum(obj, cb) {
@@ -158,8 +163,19 @@ define(['./deferred'], function(Deferred) {
         }
         return cb('success', props);
     }
-    function handleGetP(wyrmlingStore, obj, prop, cb) {
+    function handleDelP(wyrmlingStore, obj, prop, cb) {
         if (!obj.hasOwnProperty(prop)) {
+            return cb('error', { error: 'could not delete property', message: 'Property does not exist on this object' });
+        }
+        try {
+            delete obj[prop];
+            cb('success', null);
+        } catch(error) {
+            cb('error', { error: 'could not delete property', message: error && error.message || 'There was an unidentified error deleting the property'});
+        }
+    }
+    function handleGetP(wyrmlingStore, obj, prop, cb) {
+        if (!obj.hasOwnProperty(prop) && !(prop === 'length' && (isArray(obj) || isFunction(obj)))) {
             return cb('error', { error: 'could not get property', message: 'Property does not exist on this object' });
         }
         prepOutboundValue(wyrmlingStore, obj[prop]).then(function(val) {
@@ -180,6 +196,33 @@ define(['./deferred'], function(Deferred) {
     function handleRelObj(wyrmlingStore, objectId, cb) {
         delete wyrmlingStore[objectId];
         cb('success', null);
+    }
+    function handleInvoke(wyrmhole, wyrmlingStore, obj, prop, args, cb) {
+        var retVal;
+        if (prop) {
+            if (!obj.hasOwnProperty(prop)) {
+                return cb('error', { error: 'could not invoke property', message: 'Property does not exist on this object' });
+            } else if (!isFunction(obj[prop])) {
+                return cb('error', { error: 'could not invoke property', message: 'Property is not callable' });
+            }
+            // TODO: this needs to use prepInboundValue and wait for them all to be finished up
+            retVal = obj[prop].apply(obj, args);
+        }
+        else {
+            if (!isFunction(obj)) {
+                return cb('error', { error: 'could not invoke object', message: 'Object is not callable' });
+            }
+            // TODO: this needs to use prepInboundValue and wait for them all to be finished up
+            retVal = obj.apply(null, args);
+        }
+        return Deferred.when(retVal).then(function(val) {
+            return prepOutboundValue(wyrmlingStore, val).then(function(v) {
+                cb('success', v);
+            });
+        }, function(error) {
+            var type = prop ? 'property' : 'object';
+            return cb('error', { error: 'could not invoke ' + type, message: error || 'There was an unidentified error calling the ' + type });
+        });
     }
 
     function isPrimitive(val) {
