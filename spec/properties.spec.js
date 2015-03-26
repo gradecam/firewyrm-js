@@ -73,9 +73,13 @@ describe("queenling properties", function() {
             it("should send SetP", function() {
                 expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 42]);
             });
-            it("should resolve when done", function() {
+            it("should resolve with return when done", function() {
                 mockWyrmHole.lastOutbound.respond('success', null);
-                expect(setDfd).toBeResolved();
+                expect(setDfd).toBeResolvedWith(null);
+            });
+            it("should reject with error message if failed", function() {
+                mockWyrmHole.lastOutbound.error('could not set property', 'Property is read-only');
+                expect(setDfd).toBeRejectedWith({error: 'could not set property', message: 'Property is read-only'});
             });
         });
 
@@ -88,7 +92,7 @@ describe("queenling properties", function() {
             });
             it("should send SetP", function() {
                 queenling[prop] = 42;
-                expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objId, 42]);
+                expect(mockWyrmHole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 42]);
             });
             // we don't get meaningful return values from a setter, so no use to test promises here...
         });
