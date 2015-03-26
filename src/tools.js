@@ -1,16 +1,17 @@
 /* global toString */
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(['./deferred'], function(Deferred) {
+    var validMessages = {'New':true, 'Destroy':true, 'RelObj':true, 'Enum':true, 'DelP':true, 'GetP':true, 'SetP':true, 'Invoke':true};
+
     return {
         addWyrmlingStore: addWyrmlingStore,
         asVal: asVal,
         defineProperties: defineProperties,
-        handleEnum: handleEnum,
+        handleMessage: handleMessage,
         isArray: isArray,
         isFunction: isFunction,
         isNumber: isNumber,
         isPrimitive: isPrimitive,
-        isValidMessage: isValidMessage,
         wrapAlienWyrmling: wrapAlienWyrmling,
     };
 
@@ -53,8 +54,15 @@ define(['./deferred'], function(Deferred) {
                 return send(['GetP', spawnId, objectId, prop]);
             },
             setProperty: function(prop, val) {
-                val = prepOutboundValue(wyrmlingStore, val);
-                return send(['SetP', spawnId, objectId, prop, val]);
+                return prepOutboundValue(wyrmlingStore, val).then(function(v) {
+                    var valIsRef = v && v.$type === 'ref';
+                    return send(['SetP', spawnId, objectId, prop, v]).then(function(success) { return success; }, function(failure) {
+                        if (valIsRef) {
+                            delete wyrmlingStore[v.data[1]];
+                        }
+                        return Deferred.reject(failure);
+                    });
+                });
             },
             invoke: function(prop) {
                 var args = Array.prototype.slice.call(arguments, 1);
@@ -84,34 +92,94 @@ define(['./deferred'], function(Deferred) {
 
     // stores this as a localWyrmling, if necessary
     function prepOutboundValue(wyrmlingStore, val) {
-        if (isPrimitive(val)) { return val; }
-        var id = wyrmlingStore.nextId;
-        wyrmlingStore[id] = val;
-        return { $type: 'ref', data: [wyrmlingStore.spawnId, id] };
+        if (isPrimitive(val) || val.$type === 'json') { return Deferred.when(val); }
+        return Deferred.when(val).then(function(v) {
+            var id = wyrmlingStore.nextId;
+            wyrmlingStore[id] = v;
+            return { $type: 'ref', data: [wyrmlingStore.spawnId, id] };
+        });
+    }
+    function prepInboundValue(wyrmhole, wyrmlingStore, val) {
+        if (isPrimitive(val)) { return Deferred.when(val); }
+        if (val.$type === 'ref') {
+            return wrapAlienWyrmling(wyrmhole, wyrmlingStore, val.data[0], val.data[1]);
+        }
+        if (val.$type === 'json') {
+            return Deferred.when(val.data);
+        }
     }
 
-    var validMessages = {
-        // lifecycle
-        'New': true,
-        'Destroy': true,
-        'RelObj': true,
-        // properties
-        'Enum': true,
-        'DelP': true,
-        'GetP': true,
-        'SetP': true,
-        'Invoke': true
-    };
     function isValidMessage(msg) {
         if (!isArray(msg) || !validMessages[msg[0]]) {
             return false;
         }
         switch (msg[0]) {
             case 'Enum':
+            case 'RelObj':
                 return msg.length === 3 && isNumber(msg[1]) && isNumber(msg[2]);
+            case 'GetP':
+                return msg.length === 4 && isNumber(msg[1]) && isNumber(msg[2]) && isString(msg[3]);
+            case 'SetP':
+                return msg.length === 5 && isNumber(msg[1]) && isNumber(msg[2]) && isString(msg[3]);
         }
     }
-    function handleEnum(wyrmlingStore, msg, cb) {
+    function getWyrmlingStoreForMessage(baseWyrmlingStore, msg) {
+        return msg[1] in baseWyrmlingStore ? baseWyrmlingStore[msg[1]] : {};
+    }
+    function getObject(wyrmlingStore, msg) {
+        return msg[2] in wyrmlingStore ? wyrmlingStore[msg[2]] : null;
+    }
+    function handleMessage(wyrmhole, baseWyrmlingStore, msg, cb) {
+        if (!isValidMessage(msg)) {
+            return cb('error', { error: 'invalid message', message: 'Message was malformed'});
+        }
+        var store = getWyrmlingStoreForMessage(baseWyrmlingStore, msg);
+        var obj = getObject(store, msg);
+        if (obj === null) {
+            return cb('error', { error: 'invalid object', message: 'The object does not exist'});
+        }
+        switch (msg[0]) {
+            case 'Enum': return handleEnum(obj, cb);
+            case 'GetP': return handleGetP(store, obj, msg[3], cb);
+            case 'SetP': return handleSetP(wyrmhole, store, obj, msg[3], msg[4], cb);
+            case 'RelObj': return handleRelObj(store, msg[2], cb);
+        }
+    }
+    function handleEnum(obj, cb) {
+        var props = [];
+        for (var prop in obj) {
+            if (obj.hasOwnProperty(prop)) {
+                props.push(prop);
+            }
+        }
+        // add special "length" property for arrays and functions
+        if (isArray(obj) || isFunction(obj)) {
+            props.push('length');
+        }
+        return cb('success', props);
+    }
+    function handleGetP(wyrmlingStore, obj, prop, cb) {
+        if (!obj.hasOwnProperty(prop)) {
+            return cb('error', { error: 'could not get property', message: 'Property does not exist on this object' });
+        }
+        prepOutboundValue(wyrmlingStore, obj[prop]).then(function(val) {
+            cb('success', val);
+        });
+    }
+    function handleSetP(wyrmhole, wyrmlingStore, obj, prop, val, cb) {
+        if (!obj.hasOwnProperty(prop)) {
+            return cb('error', { error: 'could not set property', message: 'Property does not exist on this object' });
+        }
+        prepInboundValue(wyrmhole, wyrmlingStore, val).then(function(v) {
+            obj[prop] = v;
+            cb('success', null);
+        }, function(error) {
+            cb('error', { error: 'could not set property', message: error || 'There was an unidentified error setting the property' });
+        });
+    }
+    function handleRelObj(wyrmlingStore, objectId, cb) {
+        delete wyrmlingStore[objectId];
+        cb('success', null);
     }
 
     function isPrimitive(val) {
@@ -143,7 +211,6 @@ define(['./deferred'], function(Deferred) {
         }
     }
 
-    function isNumber(val) {
-        return toString.call(val) === '[object Number]' && !isNaN(val);
-    }
+    function isNumber(val) { return toString.call(val) === '[object Number]' && !isNaN(val); }
+    function isString(val) { return typeof(val) === 'string'; }
 });

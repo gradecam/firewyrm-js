@@ -1,6 +1,6 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(['./deferred', './tools'], function(Deferred, tools) {
-
+    FireWyrmJS.asVal = tools.asVal;
     return FireWyrmJS;
 
     function FireWyrmJS(wyrmhole) {
@@ -14,13 +14,7 @@ define(['./deferred', './tools'], function(Deferred, tools) {
         tools.addWyrmlingStore(baseWyrmlingStore, 0); // will be used when objects are sent via queenling (e.g. queenling.doSomethingWith(myObj))
 
         wyrmhole.onMessage(function(msg, cb) {
-            if (!tools.isValidMessage(msg)) {
-                return cb('error', { error: 'invalid message', message: 'Message was malformed'});
-            }
-            switch (msg[0]) {
-                case 'Enum':
-                    return tools.handleEnum(baseWyrmlingStore, msg, cb);
-            }
+            tools.handleMessage(wyrmhole, baseWyrmlingStore, msg, cb);
         });
 
         function create(mimetype, args) {
@@ -43,6 +37,4 @@ define(['./deferred', './tools'], function(Deferred, tools) {
             });
         }
     }
-
-    FireWyrmJS.asVal = tools.asVal;
 });

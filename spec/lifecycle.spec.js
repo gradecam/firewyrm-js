@@ -5,8 +5,6 @@ var clock = require('./helpers/clock');
 var lifecycle = require('./helpers/lifecycle');
 
 describe("basic lifecycle", function() {
-    console.log(FireWyrmJS);
-
     var fw, mockWyrmhole, queenling, createArgs, enumProps,
         mimetype = 'application/x-bigwyrm';
 

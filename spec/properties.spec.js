@@ -63,6 +63,7 @@ describe("queenling properties", function() {
             var setDfd;
             beforeEach(function() {
                 setDfd = queenling.setProperty(prop, 42);
+                clock.flush();
             });
             it("should exist as a generic setter", function() {
                 expect(queenling.setProperty).toEqual(jasmine.any(Function));
@@ -92,6 +93,7 @@ describe("queenling properties", function() {
             });
             it("should send SetP", function() {
                 queenling[prop] = 42;
+                clock.flush();
                 expect(mockWyrmhole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, 42]);
             });
             // we don't get meaningful return values from a setter, so no use to test promises here...
