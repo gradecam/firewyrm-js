@@ -146,6 +146,13 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         if (val.$type === 'binary') {
             return b64Buffer.decode(val.data);
         }
+        // this must be an object, so recursively make it magical
+        for (var prop in val) {
+            if (val.hasOwnProperty(prop)) {
+                val[prop] = prepInboundValue(wyrmhole, wyrmlingStore, val[prop]);
+            }
+        }
+        return Deferred.all(val);
     }
 
     function isValidMessage(msg) {

@@ -31,7 +31,7 @@ define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
     // http://wiki.ecmascript.org/doku.php?id=strawman:concurrency&rev=1308776521#allfulfilled
     Deferred.all = function(promises) {
         return Deferred.when(promises).then(function(promises) {
-            if (!isObject(promises)) { return promises; }
+            if (!(isArray(promises) || isObject(promises))) { return promises; }
             var resolved = isArray(promises) ? [] : {};
             var pendingCount = 0;
             var dfd = Deferred();
@@ -65,7 +65,8 @@ define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
         return Array.isArray ? Array.isArray(val) : toString.call(val) === '[object Array]';
     }
     function isObject(val) {
-        return val && typeof(val) === 'object';
+        // match plain objects, not special things like ArrayBuffer
+        return val && toString.call(val) === '[object Object]';
     }
 
     // Converts a function that takes a callback as the last argument to a function that returns a
