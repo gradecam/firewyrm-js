@@ -1,3 +1,4 @@
+/* global toString */
 /**
  * Provides a slightly-decorated FBPromise
  */
@@ -18,9 +19,9 @@ define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
     };
 
     /**
-     * Turns an array of promises into a promise for an array.  If any of
-     * the promises gets rejected, the whole array is rejected immediately.
-     * @param promises {Array} an array (or promise for an array)
+     * Turns an array (or object) of promises into a promise for an array or object.
+     * If any of the promises gets rejected, the whole thing is rejected immediately.
+     * @param promises {Array|Object} an array|object (or promise for an array|object)
      *   of values (or promises for values)
      * @returns {promise} a promise for an array of the corresponding values
      */
@@ -28,22 +29,29 @@ define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
     // http://wiki.ecmascript.org/doku.php?id=strawman:concurrency&rev=1308776521#allfulfilled
     Deferred.all = function(promises) {
         return Deferred.when(promises).then(function(promises) {
-            var resolvedPromises = [];
+            var isArray = Array.isArray ? Array.isArray(promises) : toString.call(promises) === '[object Array]';
+            var resolved = isArray ? [] : {};
             var pendingCount = 0;
             var dfd = Deferred();
-            promises.forEach(function(toResolve, idx) {
-                pendingCount++;
-                Deferred.when(toResolve).then(function(val) {
+            for (var prop in promises) {
+                if (promises.hasOwnProperty(prop)) {
+                    resolved[prop] = (void 0); // just to try preserving order of insertion
+                    pendingCount++;
+                    Deferred.when(promises[prop]).then(thenFn(prop), failFn);
+                }
+            }
+
+            function thenFn(prop) {
+                return function(val) {
                     pendingCount--;
-                    resolvedPromises[idx] = val;
+                    resolved[prop] = val;
                     resolveIfDone();
-                }, function(error) {
-                    dfd.reject(error);
-                });
-            });
+                };
+            }
+            function failFn(error) { dfd.reject(error); }
             function resolveIfDone() {
                 if (pendingCount === 0) {
-                    dfd.resolve(resolvedPromises);
+                    dfd.resolve(resolved);
                 }
             }
             resolveIfDone();
