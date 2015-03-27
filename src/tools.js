@@ -55,13 +55,7 @@ define(['./deferred'], function(Deferred) {
             },
             setProperty: function(prop, val) {
                 return prepOutboundValue(wyrmlingStore, val).then(function(v) {
-                    var valIsRef = v && v.$type === 'ref';
-                    return send(['SetP', spawnId, objectId, prop, v]).then(function(success) { return success; }, function(failure) {
-                        if (valIsRef) {
-                            delete wyrmlingStore[v.data[1]];
-                        }
-                        return Deferred.reject(failure);
-                    });
+                    return send(['SetP', spawnId, objectId, prop, v]);
                 });
             },
             invoke: function(prop) {

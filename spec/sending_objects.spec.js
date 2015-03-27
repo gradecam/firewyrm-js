@@ -43,7 +43,7 @@ describe("sending objects across the Wyrmhole", function() {
         expect(nextObjectId).toBeGreaterThan(firstObjectId);
     });
 
-    describe("retaining objects that have been successfully sent across the Wyrmhole", function() {
+    describe("retaining objects that have been sent across the Wyrmhole", function() {
         var complexArray, objSpawnId, objObjectId;
         beforeEach(function() {
             complexArray = [
@@ -58,18 +58,40 @@ describe("sending objects across the Wyrmhole", function() {
             mockWyrmhole.lastOutbound.success(null); // mimic success and finish processing any callbacks
         });
 
-        describe("after the object has been released", function() {
+        it("should honor a 'RelObj' message", function() {
+            mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
+            expect(mockWyrmhole.lastInbound.status).toBe('success');
+            expect(mockWyrmhole.lastInbound.response).toBe(null);
+        });
+        it("should fail accessors like 'RelObj' after it has been released", function() {
+            mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
+
+            // fail GetP
+            mockWyrmhole.lastInbound = {};
+            mockWyrmhole.triggerInbound(['GetP', objSpawnId, objObjectId, '0']);
+            expect(mockWyrmhole.lastInbound.status).toBe('error');
+            expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'The object does not exist'});
+
+            // fail RelObj
+            mockWyrmhole.lastInbound = {};
+            mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
+            expect(mockWyrmhole.lastInbound.status).toBe('error');
+            expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'The object does not exist'});
+        });
+
+        describe("if the other end returned an error when we sent the object", function() {
             beforeEach(function() {
-                mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
+                queenling.setProperty('propertyThatDoesNotExist', [5,10,15]);
+                clock.flush();
+                objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
+                objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
+                mockWyrmhole.lastOutbound.error('could not set property', 'Property is read-only'); // mimic failure
             });
-            it("should repond with errors if further operations are attempted", function() {
-                mockWyrmhole.triggerInbound(['Enum', objSpawnId, objObjectId]);
+            it("should still be retained (and answer accessors) until we get RelObj", function() {
+                mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
+                expect(mockWyrmhole.lastInbound.status).toBe('success');
+                mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);
                 expect(mockWyrmhole.lastInbound.status).toBe('error');
-                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'The object does not exist'});
-                mockWyrmhole.lastInbound = {};
-                mockWyrmhole.triggerInbound(['GetP', objSpawnId, objObjectId, '0']);
-                expect(mockWyrmhole.lastInbound.status).toBe('error');
-                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'The object does not exist'});
             });
         });
 
@@ -297,29 +319,6 @@ describe("sending objects across the Wyrmhole", function() {
             queenling.setProperty(prop, FireWyrmJS.asVal(null));
             clock.flush();
             expect(mockWyrmhole.lastOutbound.args).toEqual(['SetP', queenling.spawnId, queenling.objectId, prop, null]);
-        });
-    });
-
-    /******************************************************************
-     * Error sending the object across the Wyrmhole
-     ******************************************************************/
-    describe("NOT retaining objects that failed to be sent across the Wyrmhole", function() {
-        var objSpawnId, objObjectId;
-        beforeEach(function() {
-            queenling.setProperty('propertyThatDoesNotExist', [5,10,15]);
-            clock.flush();
-            objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
-            objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
-            mockWyrmhole.lastOutbound.error('could not set property', 'Property is read-only'); // mimic failure
-        });
-        it("should repond with errors if accessor operations are attempted", function() {
-            mockWyrmhole.triggerInbound(['Enum', objSpawnId, objObjectId]);
-            expect(mockWyrmhole.lastInbound.status).toBe('error');
-            expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'The object does not exist'});
-            mockWyrmhole.lastInbound = {};
-            mockWyrmhole.triggerInbound(['GetP', objSpawnId, objObjectId, '0']);
-            expect(mockWyrmhole.lastInbound.status).toBe('error');
-            expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'The object does not exist'});
         });
     });
 });
