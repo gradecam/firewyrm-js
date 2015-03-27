@@ -21,7 +21,8 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             spawnId: { value: spawnId },
             nextId: { get: function() { return nextId++; } }
         });
-        Object.defineProperty(baseStore, 0, { value: newStore });
+        Object.defineProperty(baseStore, spawnId, { value: newStore, configurable: true });
+        return newStore;
     }
 
     function asVal(obj) {
@@ -158,6 +159,10 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             return false;
         }
         switch (msg[0]) {
+            case 'Destroy':
+                return msg.length === 2 && isNumber(msg[1]);
+            case 'New':
+                return msg.length === 3 && msg[1] && isString(msg[1]);
             case 'Enum':
             case 'RelObj':
                 return msg.length === 3 && isNumber(msg[1]) && isNumber(msg[2]);
@@ -176,10 +181,16 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
     function getObject(wyrmlingStore, msg) {
         return msg[2] in wyrmlingStore ? wyrmlingStore[msg[2]] : null;
     }
-    function handleMessage(wyrmhole, baseWyrmlingStore, msg, cb) {
+    function handleMessage(wyrmhole, baseWyrmlingStore, supportedTypes, msg, cb) {
         if (!isValidMessage(msg)) {
             return cb('error', { error: 'invalid message', message: 'Message was malformed'});
         }
+        if (msg[0] === 'New') {
+            return handleNew(baseWyrmlingStore, supportedTypes, msg, cb);
+        } else if (msg[0] === 'Destroy') {
+            return handleDestroy(baseWyrmlingStore, supportedTypes, msg, cb);
+        }
+
         var store = getWyrmlingStoreForMessage(baseWyrmlingStore, msg);
         var obj = getObject(store, msg);
         if (obj === null) {
@@ -192,6 +203,37 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             case 'SetP': return handleSetP(wyrmhole, store, obj, msg[3], msg[4], cb);
             case 'RelObj': return handleRelObj(store, msg[2], cb);
             case 'Invoke': return handleInvoke(wyrmhole, store, obj, msg[3], msg[4], cb);
+        }
+    }
+    function handleNew(baseWyrmlingStore, supportedTypes, msg, cb) {
+        if (!(msg[1] in supportedTypes)) {
+            return cb('error', { error: 'invalid object type', message: 'Object type ' + msg[1] + ' is not supported' });
+        }
+        try {
+            var princessling = supportedTypes[msg[1]](msg[2] || {});
+            baseWyrmlingStore.nextId = baseWyrmlingStore.nextId || 1;
+            var spawnId = baseWyrmlingStore.nextId++;
+            var wyrmlingStore = addWyrmlingStore(baseWyrmlingStore, spawnId);
+            wyrmlingStore[0] = princessling;
+            cb('success', spawnId);
+        } catch(error) {
+            cb('error', { error: 'could not create object', message: error && error.message || 'There was an unidentified error creating the object'});
+        }
+    }
+    function handleDestroy(baseWyrmlingStore, supportedTypes, msg, cb) {
+        var spawnId = msg[1];
+        if (!baseWyrmlingStore[spawnId] || !baseWyrmlingStore[spawnId][0]) {
+            return cb('error', { error: 'could not destroy object', message: 'The object does not exist' });
+        }
+        try {
+            var princessling = baseWyrmlingStore[spawnId][0];
+            delete baseWyrmlingStore[spawnId];
+            if (isFunction(princessling._onDestroy)) {
+                princessling._onDestroy();
+            }
+            cb('success', spawnId);
+        } catch(error) {
+            cb('error', { error: 'could not destroy object', message: error && error.message || 'There was an unidentified error creating the object'});
         }
     }
     function handleEnum(obj, cb) {
@@ -242,6 +284,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         });
     }
     function handleRelObj(wyrmlingStore, objectId, cb) {
+        if (objectId === 0) { return; } // root objects cannot be released, they must be destroyed
         delete wyrmlingStore[objectId];
         cb('success', null);
     }
