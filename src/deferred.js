@@ -17,6 +17,41 @@ define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
         return dfd.promise;
     };
 
+    /**
+     * Turns an array of promises into a promise for an array.  If any of
+     * the promises gets rejected, the whole array is rejected immediately.
+     * @param promises {Array} an array (or promise for an array)
+     *   of values (or promises for values)
+     * @returns {promise} a promise for an array of the corresponding values
+     */
+    // By Mark Miller
+    // http://wiki.ecmascript.org/doku.php?id=strawman:concurrency&rev=1308776521#allfulfilled
+    Deferred.all = function(promises) {
+        return Deferred.when(promises).then(function(promises) {
+            var resolvedPromises = [];
+            var pendingCount = 0;
+            var dfd = Deferred();
+            promises.forEach(function(toResolve, idx) {
+                pendingCount++;
+                Deferred.when(toResolve).then(function(val) {
+                    pendingCount--;
+                    resolvedPromises[idx] = val;
+                    resolveIfDone();
+                }, function(error) {
+                    dfd.reject(error);
+                });
+            });
+            function resolveIfDone() {
+                if (pendingCount === 0) {
+                    dfd.resolve(resolvedPromises);
+                }
+            }
+            resolveIfDone();
+            return dfd.promise;
+        });
+    };
+
+
     // Converts a function that takes a callback as the last argument to a function that returns a
     // deferred object that is resolved to the callback value.
     Deferred.fn = function(obj, method) {
