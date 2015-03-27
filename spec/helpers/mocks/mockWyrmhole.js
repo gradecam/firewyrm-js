@@ -4,6 +4,7 @@ define(['../../../src/deferred', '../clock'], function(Deferred, clock) {
     var MockWyrmhole = function() {
         var self = this;
         self.lastSpawnId = ++id;
+        self.outbound = [];
         self.lastOutbound = {
             respond: function() {}
         };
@@ -27,6 +28,10 @@ define(['../../../src/deferred', '../clock'], function(Deferred, clock) {
                     clock.flush();
                 },
             };
+            self.outbound.push(self.lastOutbound);
+        };
+        self.getOutbound = function(index) {
+            return self.outbound.slice(index, index === -1 ? (void 0) : index+1)[0];
         };
 
         // called by FireWyrmJS so it can receive messages from the other side

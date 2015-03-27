@@ -4,7 +4,16 @@ var clock = require('./clock');
 
 beforeEach(function() {
     jasmine.addMatchers(deferredMatchers);
+    jasmine.addMatchers(wyrmlingMatchers);
 });
+
+var wyrmlingMatchers = {
+    toBeAWyrmling: matcherFactory(function(util, customEqualityTesters, actual) {
+        return {
+            pass: _.isObject(actual) && actual.objectId && actual.spawnId && actual.getProperty && actual.setProperty && actual.invoke
+        };
+    })
+};
 
 // NOTE: to use any of these except `toBeThennable`, you must have performed
 //       clock.install() using our clock helper
