@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "amdefine": "^0.1.0",
+    "base64-arraybuffer": "^0.1.2",
     "fbpromise": "git://github.com/firebreath/fbpromise"
   }
 }

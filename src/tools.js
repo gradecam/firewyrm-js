@@ -1,6 +1,6 @@
 /* global toString */
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
-define(['./deferred'], function(Deferred) {
+define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, b64Buffer) {
     var validMessages = {'New':true, 'Destroy':true, 'RelObj':true, 'Enum':true, 'DelP':true, 'GetP':true, 'SetP':true, 'Invoke':true};
 
     return {
@@ -27,6 +27,9 @@ define(['./deferred'], function(Deferred) {
 
     function asVal(obj) {
         if (isPrimitive(obj)) { return obj; }
+        if (obj instanceof ArrayBuffer) {
+            return { $type: 'binary', data: b64Buffer.encode(obj) };
+        }
         return { $type: 'json', data: obj };
     }
 
@@ -51,7 +54,9 @@ define(['./deferred'], function(Deferred) {
             spawnId: spawnId,
             objectId: objectId,
             getProperty: function(prop) {
-                return send(['GetP', spawnId, objectId, prop]);
+                return send(['GetP', spawnId, objectId, prop]).then(function(val) {
+                    return prepInboundValue(wyrmhole, wyrmlingStore, val);
+                });
             },
             setProperty: function(prop, val) {
                 return prepOutboundValue(wyrmlingStore, val).then(function(v) {
@@ -60,7 +65,9 @@ define(['./deferred'], function(Deferred) {
             },
             invoke: function(prop) {
                 var args = Array.prototype.slice.call(arguments, 1);
-                return send(['Invoke', spawnId, objectId, prop, args]);
+                return send(['Invoke', spawnId, objectId, prop, args]).then(function(val) {
+                    return prepInboundValue(wyrmhole, wyrmlingStore, val);
+                });
             }
         });
         return send(['Enum', spawnId, objectId]).then(function(props) {
@@ -86,8 +93,10 @@ define(['./deferred'], function(Deferred) {
 
     // stores this as a localWyrmling, if necessary
     function prepOutboundValue(wyrmlingStore, val) {
-        if (isPrimitive(val) || val.$type === 'json') { return Deferred.when(val); }
         return Deferred.when(val).then(function(v) {
+            if (isPrimitive(v) || v.$type === 'json' || v.$type === 'binary') {
+                return v;
+            }
             var id = wyrmlingStore.nextId;
             wyrmlingStore[id] = v;
             return { $type: 'ref', data: [wyrmlingStore.spawnId, id] };
@@ -100,6 +109,9 @@ define(['./deferred'], function(Deferred) {
         }
         if (val.$type === 'json') {
             return Deferred.when(val.data);
+        }
+        if (val.$type === 'binary') {
+            return b64Buffer.decode(val.data);
         }
     }
 
