@@ -197,7 +197,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
     function handleEnum(obj, cb) {
         var props = [];
         for (var prop in obj) {
-            if (obj.hasOwnProperty(prop)) {
+            if (obj.hasOwnProperty(prop) && prop[0] !== '_') {
                 props.push(prop);
             }
         }

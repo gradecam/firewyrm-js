@@ -187,7 +187,7 @@ describe("sending objects across the Wyrmhole", function() {
 
         describe("objects", function() {
             beforeEach(function() {
-                var obj = { isObj: true, strVal: 'string', fn: function() { return 42; }};
+                var obj = { isObj: true, strVal: 'string', fn: function() { return 42; }, _private: true};
                 Object.defineProperty(obj, 'cannotDelete', { value: 666 });
                 Object.defineProperty(obj, 'cannotWrite', { value: 666, writable: false });
                 queenling.setProperty(prop, obj);
@@ -196,7 +196,7 @@ describe("sending objects across the Wyrmhole", function() {
                 objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
                 mockWyrmhole.lastOutbound.success(null); // mimic success and finish processing any callbacks
             });
-            it("'Enum' should return each enumerable property and the length", function() {
+            it("'Enum' should return each enumerable property EXCEPT those starting with an underscore", function() {
                 mockWyrmhole.triggerInbound(['Enum', objSpawnId, objObjectId]);
                 expect(mockWyrmhole.lastInbound.status).toBe('success');
                 expect(mockWyrmhole.lastInbound.response).toEqual(['isObj', 'strVal', 'fn']);
