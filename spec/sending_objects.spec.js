@@ -7,7 +7,7 @@ var lifecycle = require('./helpers/lifecycle');
 
 describe("sending objects across the Wyrmhole", function() {
     var mockWyrmhole, queenling,
-        prop = defaults.newQueenlingProps[2]; // arrayProp
+        prop = defaults.newQueenlingProps[2]; // complexProp
 
     beforeEach(function() {
         clock.install();

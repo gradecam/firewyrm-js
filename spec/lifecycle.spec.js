@@ -14,7 +14,7 @@ describe("basic lifecycle", function() {
         mockWyrmhole = lifecycle.newMockWyrmhole();
         fw = new FireWyrmJS(mockWyrmhole);
         createArgs = {};
-        enumProps = ['intProp', 'stringProp', 'arrayProp', 'functionProp'];
+        enumProps = ['intProp', 'stringProp', 'complexProp', 'functionProp'];
         queenling = fw.create(mimetype, createArgs);
     });
     afterEach(function() {

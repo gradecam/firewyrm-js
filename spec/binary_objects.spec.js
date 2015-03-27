@@ -10,7 +10,7 @@ describe("binary objects traversing the Wyrmhole", function() {
     var mockWyrmhole, queenling,
         bufferStr = 'Mg==',
         bufferObj = b64Buffer.decode(bufferStr),
-        prop = defaults.newQueenlingProps[2]; // arrayProp
+        prop = defaults.newQueenlingProps[2]; // complexProp
 
     beforeEach(function() {
         clock.install();
