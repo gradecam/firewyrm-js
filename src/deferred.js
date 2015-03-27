@@ -19,25 +19,27 @@ define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
     };
 
     /**
-     * Turns an array (or object) of promises into a promise for an array or object.
+     * Recursively turns an array (or object) of promises into a promise for an array or object.
      * If any of the promises gets rejected, the whole thing is rejected immediately.
+     * If something other than an object or array is provided, it is returned untouched.
+     *
      * @param promises {Array|Object} an array|object (or promise for an array|object)
      *   of values (or promises for values)
      * @returns {promise} a promise for an array of the corresponding values
      */
-    // By Mark Miller
+    // Inspired by Q, concept by Mark Miller
     // http://wiki.ecmascript.org/doku.php?id=strawman:concurrency&rev=1308776521#allfulfilled
     Deferred.all = function(promises) {
         return Deferred.when(promises).then(function(promises) {
-            var isArray = Array.isArray ? Array.isArray(promises) : toString.call(promises) === '[object Array]';
-            var resolved = isArray ? [] : {};
+            if (!isObject(promises)) { return promises; }
+            var resolved = isArray(promises) ? [] : {};
             var pendingCount = 0;
             var dfd = Deferred();
             for (var prop in promises) {
                 if (promises.hasOwnProperty(prop)) {
                     resolved[prop] = (void 0); // just to try preserving order of insertion
                     pendingCount++;
-                    Deferred.when(promises[prop]).then(thenFn(prop), failFn);
+                    Deferred.all(promises[prop]).then(thenFn(prop), failFn);
                 }
             }
 
@@ -59,6 +61,12 @@ define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
         });
     };
 
+    function isArray(val) {
+        return Array.isArray ? Array.isArray(val) : toString.call(val) === '[object Array]';
+    }
+    function isObject(val) {
+        return val && typeof(val) === 'object';
+    }
 
     // Converts a function that takes a callback as the last argument to a function that returns a
     // deferred object that is resolved to the callback value.
