@@ -189,13 +189,14 @@ describe("sending objects across the Wyrmhole", function() {
             beforeEach(function() {
                 var obj = { isObj: true, strVal: 'string', fn: function() { return 42; }};
                 Object.defineProperty(obj, 'cannotDelete', { value: 666 });
+                Object.defineProperty(obj, 'cannotWrite', { value: 666, writable: false });
                 queenling.setProperty(prop, obj);
                 clock.flush();
                 objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
                 objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
                 mockWyrmhole.lastOutbound.success(null); // mimic success and finish processing any callbacks
             });
-            it("'Enum' should return each index and the length", function() {
+            it("'Enum' should return each enumerable property and the length", function() {
                 mockWyrmhole.triggerInbound(['Enum', objSpawnId, objObjectId]);
                 expect(mockWyrmhole.lastInbound.status).toBe('success');
                 expect(mockWyrmhole.lastInbound.response).toEqual(['isObj', 'strVal', 'fn']);
@@ -219,6 +220,11 @@ describe("sending objects across the Wyrmhole", function() {
                 mockWyrmhole.triggerInbound(['SetP', objSpawnId, objObjectId, 'isObj', 24]);
                 expect(mockWyrmhole.lastInbound.status).toBe('success');
                 expect(mockWyrmhole.lastInbound.response).toBe(null);
+            });
+            it("'SetP' should fail for non-writable properties", function() {
+                mockWyrmhole.triggerInbound(['SetP', objSpawnId, objObjectId, 'cannotWrite', 5]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not set property', message: jasmine.any(String) });
             });
             it("'RelObj' should succeed", function() {
                 mockWyrmhole.triggerInbound(['RelObj', objSpawnId, objObjectId]);

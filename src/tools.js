@@ -194,8 +194,12 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             return cb('error', { error: 'could not set property', message: 'Property does not exist on this object' });
         }
         prepInboundValue(wyrmhole, wyrmlingStore, val).then(function(v) {
-            obj[prop] = v;
-            cb('success', null);
+            try {
+                obj[prop] = v;
+                cb('success', null);
+            } catch(error) {
+                cb('error', { error: 'could not set property', message: error && error.message || 'There was an unidentified error deleting the property'});
+            }
         }, function(error) {
             cb('error', { error: 'could not set property', message: error || 'There was an unidentified error setting the property' });
         });
