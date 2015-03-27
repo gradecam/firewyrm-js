@@ -55,6 +55,10 @@ describe("queenling properties", function() {
                 mockWyrmhole.lastOutbound.respond('success', 42);
                 expect(getDfd).toBeResolvedWith(42);
             });
+            it("should reject if the call failed", function() {
+                mockWyrmhole.lastOutbound.error('could not get property', 'Property does not exist');
+                expect(getDfd).toBeRejectedWith({ error: 'could not get property', message: 'Property does not exist' });
+            });
 
             describe("properties that can't be defined on Functions", function() {
                 it("should silently be ignored", function() {

@@ -33,7 +33,7 @@ define(['./deferred', './tools'], function(Deferred, tools) {
                 });
                 return queenling;
             }, function(error) {
-                console.log("CREATE ERROR:", error);
+                //console.warn("CREATE ERROR:", error);
                 return Deferred.reject(error);
             });
         }

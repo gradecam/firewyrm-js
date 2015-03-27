@@ -85,10 +85,6 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
                 }).then(function(val) {
                     return prepInboundValue(wyrmhole, wyrmlingStore, val);
                 });
-
-                return send(['Invoke', spawnId, objectId, prop, args]).then(function(val) {
-                    return prepInboundValue(wyrmhole, wyrmlingStore, val);
-                });
             }
         });
         return send(['Enum', spawnId, objectId]).then(function(props) {

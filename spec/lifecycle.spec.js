@@ -37,6 +37,15 @@ describe("basic lifecycle", function() {
             mockWyrmhole.lastOutbound.respond('success', enumProps); // respond to "Enum"
             expect(queenling).toBeResolved();
         });
+        it("should reject if 'New' fails", function() {
+            mockWyrmhole.lastOutbound.error('could not create plugin', 'Unsupported mimetype');
+            expect(queenling).toBeRejectedWith({ error: 'could not create plugin', message: 'Unsupported mimetype' });
+        });
+        it("should reject if 'Enum' fails", function() {
+            mockWyrmhole.lastOutbound.respond('success', mockWyrmhole.lastSpawnId); // respond to "New"
+            mockWyrmhole.lastOutbound.error('invalid object', 'The object does not exist');
+            expect(queenling).toBeRejectedWith({ error: 'invalid object', message: 'The object does not exist' });
+        });
     });
 
     describe("after the queenling is resolved", function() {

@@ -86,13 +86,14 @@ describe("invoking functions across the Wyrmhole", function() {
     describe("sending arguments", function() {
         var fnSpawnId, fnObjectId;
         function invokeWithArguments() {
-            queenling[prop].apply(queenling, arguments);
+            var invokeDfd = queenling[prop].apply(queenling, arguments);
             // respond to GetP and resolve any resulting promises
             fnSpawnId = Math.floor(Math.random()*100);
             fnObjectId = Math.floor(Math.random()*100);
             mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]});
             // respond to Enum
             mockWyrmhole.lastOutbound.success([]);
+            return invokeDfd;
         }
         it("should properly pass zero arguments", function() {
             invokeWithArguments();
@@ -105,6 +106,16 @@ describe("invoking functions across the Wyrmhole", function() {
         it("should properly pass multiple arguments", function() {
             invokeWithArguments('string', 3.6, null, true);
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', ['string', 3.6, null, true]]);
+        });
+        it("should ultimately resolve with the return value", function() {
+            var invokeDfd = invokeWithArguments('string', 3.6, null, true);
+            mockWyrmhole.lastOutbound.success('Good job!');
+            expect(invokeDfd).toBeResolvedWith('Good job!');
+        });
+        it("should reject if the call failed", function() {
+            var invokeDfd = invokeWithArguments('string', 3.6, null, true);
+            mockWyrmhole.lastOutbound.error('could not invoke', 'Invalid arguments');
+            expect(invokeDfd).toBeRejectedWith({ error: 'could not invoke', message: 'Invalid arguments' });
         });
 
         describe("passing complex arguments to a function", function() {
@@ -173,6 +184,12 @@ describe("invoking functions across the Wyrmhole", function() {
             clock.flush();
             mockWyrmhole.lastOutbound.success(42);
             expect(invokeDfd).toBeResolvedWith(42);
+        });
+        it("should reject if the call failed", function() {
+            var invokeDfd = queenling.invoke(prop, 6, 7);
+            clock.flush();
+            mockWyrmhole.lastOutbound.error('could not invoke property', 'Property does not exist');
+            expect(invokeDfd).toBeRejectedWith({ error: 'could not invoke property', message: 'Property does not exist' });
         });
     });
 
