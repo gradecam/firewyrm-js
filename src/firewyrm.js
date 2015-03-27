@@ -1,4 +1,5 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
+'use strict';
 define(['./deferred', './tools'], function(Deferred, tools) {
     FireWyrmJS.asVal = tools.asVal;
     return FireWyrmJS;

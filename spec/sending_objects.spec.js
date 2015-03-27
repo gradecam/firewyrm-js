@@ -187,7 +187,9 @@ describe("sending objects across the Wyrmhole", function() {
 
         describe("objects", function() {
             beforeEach(function() {
-                queenling.setProperty(prop, { isObj: true, strVal: 'string', fn: function() { return 42; }});
+                var obj = { isObj: true, strVal: 'string', fn: function() { return 42; }};
+                Object.defineProperty(obj, 'cannotDelete', { value: 666 });
+                queenling.setProperty(prop, obj);
                 clock.flush();
                 objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
                 objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
@@ -207,6 +209,11 @@ describe("sending objects across the Wyrmhole", function() {
                 mockWyrmhole.triggerInbound(['DelP', objSpawnId, objObjectId, 'isObj']);
                 expect(mockWyrmhole.lastInbound.status).toBe('success');
                 expect(mockWyrmhole.lastInbound.response).toEqual(null);
+            });
+            it("'DelP' should fail for non-configurable properties", function() {
+                mockWyrmhole.triggerInbound(['DelP', objSpawnId, objObjectId, 'cannotDelete']);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'could not delete property', message: jasmine.any(String) });
             });
             it("'SetP' should return null", function() {
                 mockWyrmhole.triggerInbound(['SetP', objSpawnId, objObjectId, 'isObj', 24]);

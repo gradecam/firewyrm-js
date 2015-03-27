@@ -1,4 +1,5 @@
 /* global toString */
+'use strict';
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, b64Buffer) {
     var validMessages = {'New':true, 'Destroy':true, 'RelObj':true, 'Enum':true, 'DelP':true, 'GetP':true, 'SetP':true, 'Invoke':true};
