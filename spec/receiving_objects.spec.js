@@ -2,7 +2,6 @@
 'use strict';
 var clock = require('./helpers/clock');
 var defaults = require('./helpers/defaults');
-var FireWyrmJS = require('../src/firewyrm');
 var lifecycle = require('./helpers/lifecycle');
 
 describe("receiving objects from the Wyrmhole", function() {
@@ -94,7 +93,34 @@ describe("receiving objects from the Wyrmhole", function() {
                 });
                 expect(resp.nestedRef).toBeAWyrmling();
             });
-            it("should work the same for Invoke as it does for GetP", function() {
+            it("should work the same for invoking getters as it does for getProperty", function() {
+                queenling[prop]().then(function(thing) {
+                    resp = thing;
+                });
+                // respond to GetP
+                mockWyrmhole.lastOutbound.success({ $type: 'ref', data: [ 50, 51 ]});
+                // respond to Enum
+                mockWyrmhole.lastOutbound.success(['length']);
+                clock.flush(); // because the outbound arguments need to be sanitized first
+                // respond to 'Invoke'
+                mockWyrmhole.lastOutbound.success({
+                    nestedJson: { $type: 'json', data: { isObj: true} },
+                    nestedRef: { $type: 'ref', data: [60, 61] },
+                    nestedBinary: { $type: 'binary', data: 'Mg==' },
+                    nestedSimple: true
+                });
+                // respond to 'Enum'
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 60, 61]);
+                mockWyrmhole.lastOutbound.success(['a','b','c']);
+                expect(resp).toEqual({
+                    nestedJson: { isObj: true },
+                    nestedRef: jasmine.any(Function), // alien wyrmling
+                    nestedBinary: jasmine.any(ArrayBuffer),
+                    nestedSimple: true
+                });
+                expect(resp.nestedRef).toBeAWyrmling();
+            });
+            it("should work the same for invoke as it does for getProperty", function() {
                 queenling.invoke(prop, []).then(function(thing) {
                     resp = thing;
                 });
