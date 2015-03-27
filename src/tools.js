@@ -93,7 +93,11 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         });
         return send(['Enum', spawnId, objectId]).then(function(props) {
             for (var i = 0; i < props.length; i++) {
-                createProperty(wyrmling, props[i]);
+                try {
+                    createProperty(wyrmling, props[i]);
+                } catch(e) {
+                    //console.warn("Could not create property " + props[i] + ":", e);
+                }
             }
             return wyrmling;
         });

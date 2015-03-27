@@ -55,6 +55,16 @@ describe("queenling properties", function() {
                 mockWyrmhole.lastOutbound.respond('success', 42);
                 expect(getDfd).toBeResolvedWith(42);
             });
+
+            describe("properties that can't be defined on Functions", function() {
+                it("should silently be ignored", function() {
+                    queenling = lifecycle.getResolvedQueenling(mockWyrmhole, 'mimetype', {}, ['a','length']);
+                    // this property was defined
+                    expect(queenling.a).toEqual(jasmine.any(Function));
+                    // this property was not
+                    expect(queenling.length).toEqual(jasmine.any(Number));
+                });
+            });
         });
     });
 
