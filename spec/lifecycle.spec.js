@@ -52,6 +52,7 @@ describe("basic lifecycle", function() {
         });
         it("should send 'Invoke' if called", function() {
             queenling(1,2);
+            clock.flush();
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, '', [1,2]]);
         });
     });

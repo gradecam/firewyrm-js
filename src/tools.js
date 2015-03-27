@@ -55,9 +55,23 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             spawnId: spawnId,
             objectId: objectId,
             getProperty: function(prop) {
-                return send(['GetP', spawnId, objectId, prop]).then(function(val) {
+                var getPropVal;
+                var getPromise = send(['GetP', spawnId, objectId, prop]).then(function(val) {
                     return prepInboundValue(wyrmhole, wyrmlingStore, val);
+                }).then(function(val) {
+                    getPropVal = val;
+                    return val;
                 });
+                function magicalFn() {
+                    var args = Array.prototype.slice.call(arguments, 0);
+                    return getPromise.then(function() {
+                        return isFunction(getPropVal) ?
+                            getPropVal.apply(null, args) :
+                            Deferred.reject({ error: 'could not invoke', message: 'The object is not invokable' });
+                    });
+                }
+                magicalFn.then = getPromise.then;
+                return magicalFn;
             },
             setProperty: function(prop, val) {
                 return prepOutboundValue(wyrmlingStore, val).then(function(v) {
@@ -66,6 +80,12 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             },
             invoke: function(prop) {
                 var args = Array.prototype.slice.call(arguments, 1);
+                return prepOutboundArguments(wyrmlingStore, args).then(function(args) {
+                    return send(['Invoke', spawnId, objectId, prop, args]);
+                }).then(function(val) {
+                    return prepInboundValue(wyrmhole, wyrmlingStore, val);
+                });
+
                 return send(['Invoke', spawnId, objectId, prop, args]).then(function(val) {
                     return prepInboundValue(wyrmhole, wyrmlingStore, val);
                 });
@@ -101,6 +121,18 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             var id = wyrmlingStore.nextId;
             wyrmlingStore[id] = v;
             return { $type: 'ref', data: [wyrmlingStore.spawnId, id] };
+        });
+    }
+    // returns after prepOutboundValue has resolved for each arg
+    function prepOutboundArguments(wyrmlingStore, args) {
+        return Deferred.when(args).then(function(rargs) {
+            if (!isArray(rargs) || !rargs.length) { return []; }
+            var toResolve = args.map(function(val) {
+                return prepOutboundValue(wyrmlingStore, val).then(function(v) {
+                    return v;
+                });
+            });
+            return Deferred.all(toResolve);
         });
     }
     function prepInboundValue(wyrmhole, wyrmlingStore, val) {

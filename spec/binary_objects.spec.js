@@ -40,10 +40,12 @@ describe("binary objects traversing the Wyrmhole", function() {
     });
     it("should convert received binary values into ArrayBuffers", function() {
         var getDfd = queenling[prop];
+        clock.flush();
         mockWyrmhole.lastOutbound.success({ $type: 'binary', data: bufferStr });
         expect(getDfd).toBeResolvedWith(jasmine.any(ArrayBuffer));
 
         getDfd = queenling.invoke(prop);
+        clock.flush();
         mockWyrmhole.lastOutbound.success({ $type: 'binary', data: bufferStr });
         expect(getDfd).toBeResolvedWith(jasmine.any(ArrayBuffer));
     });

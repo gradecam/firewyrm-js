@@ -42,7 +42,11 @@ describe("invoking functions across the Wyrmhole", function() {
                 queenling[prop](6,7);
                 var fnSpawnId = Math.floor(Math.random()*100);
                 var fnObjectId = Math.floor(Math.random()*100);
-                mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]}); // mock success and resolve any promises
+                // mock success and resolve any promises
+                mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]});
+                // respond to the resulting 'Enum' from when we wrap the alien wyrmling
+                mockWyrmhole.lastOutbound.success([]);
+                // respond to 'Invoke'
                 expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', fnSpawnId, fnObjectId, '', jasmine.any(Array)]);
             });
             it("should return promises when invoked", function() {
@@ -56,7 +60,11 @@ describe("invoking functions across the Wyrmhole", function() {
                 var invokeDfd = queenling[prop](6,7);
                 var fnSpawnId = Math.floor(Math.random()*100);
                 var fnObjectId = Math.floor(Math.random()*100);
-                mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]}); // mock success and resolve any promises
+                // mock success and resolve any promises
+                mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]});
+                // respond to the resulting 'Enum' from when we wrap the alien wyrmling
+                mockWyrmhole.lastOutbound.success([]);
+                // respond to 'Invoke'
                 mockWyrmhole.lastOutbound.success(false);
                 expect(invokeDfd).toBeResolvedWith(false);
             });
@@ -64,7 +72,11 @@ describe("invoking functions across the Wyrmhole", function() {
                 var invokeDfd = queenling[prop](6,7);
                 var fnSpawnId = Math.floor(Math.random()*100);
                 var fnObjectId = Math.floor(Math.random()*100);
-                mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]}); // mock success and resolve any promises
+                // mock success and resolve any promises
+                mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]});
+                // respond to the resulting 'Enum' from when we wrap the alien wyrmling
+                mockWyrmhole.lastOutbound.success([]);
+                // respond to 'Invoke'
                 mockWyrmhole.lastOutbound.success('I am a string');
                 expect(invokeDfd).toBeResolvedWith('I am a string');
             });
@@ -79,6 +91,8 @@ describe("invoking functions across the Wyrmhole", function() {
             fnSpawnId = Math.floor(Math.random()*100);
             fnObjectId = Math.floor(Math.random()*100);
             mockWyrmhole.lastOutbound.success({$type: 'ref', data: [fnSpawnId, fnObjectId]});
+            // respond to Enum
+            mockWyrmhole.lastOutbound.success([]);
         }
         it("should properly pass zero arguments", function() {
             invokeWithArguments();
@@ -137,10 +151,12 @@ describe("invoking functions across the Wyrmhole", function() {
     describe("queenling.invoke", function() {
         it("should send 'Invoke' without first sending 'GetP'", function() {
             queenling.invoke(prop);
+            clock.flush();
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, prop, []]);
         });
         it("should accept n arguments and pass them along", function() {
             queenling.invoke(prop, null, 'string', { isObj: true });
+            clock.flush();
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, prop, [
                 null,
                 'string',
@@ -149,10 +165,12 @@ describe("invoking functions across the Wyrmhole", function() {
         });
         it("should return a promise", function() {
             var invokeDfd = queenling.invoke(prop, 6, 7);
+            clock.flush();
             expect(invokeDfd).toBeThennable();
         });
         it("should ultimately resolve to the return value", function() {
             var invokeDfd = queenling.invoke(prop, 6, 7);
+            clock.flush();
             mockWyrmhole.lastOutbound.success(42);
             expect(invokeDfd).toBeResolvedWith(42);
         });
@@ -167,7 +185,7 @@ describe("invoking functions across the Wyrmhole", function() {
             var invokeDfd = queenling.intProp();
             mockWyrmhole.lastOutbound.success(42);
             expect(mockWyrmhole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, 'intProp']);
-            expect(invokeDfd).toHaveBeenRejectedWith({
+            expect(invokeDfd).toBeRejectedWith({
                 error: 'could not invoke',
                 message: 'The object is not invokable'
             });
