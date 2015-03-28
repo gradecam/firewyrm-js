@@ -289,7 +289,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         cb('success', null);
     }
     function handleInvoke(wyrmhole, wyrmlingStore, obj, prop, args, cb) {
-        var retVal;
+        var retVal, promises = [];
         if (prop) {
             if (!obj.hasOwnProperty(prop)) {
                 return cb('error', { error: 'could not invoke property', message: 'Property does not exist on this object' });
@@ -298,6 +298,12 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             }
             // TODO: this needs to use prepInboundValue and wait for them all to be finished up
             retVal = obj[prop].apply(obj, args);
+            args.forEach(function(arg) {
+                promises.push(prepInboundValue(wyrmhole, wyrmlingStore, arg));
+            });
+            retVal = Deferred.all(promises).then(function(args) {
+                return obj[prop].apply(obj, args);
+            });
         }
         else {
             if (!isFunction(obj)) {
@@ -305,6 +311,12 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             }
             // TODO: this needs to use prepInboundValue and wait for them all to be finished up
             retVal = obj.apply(null, args);
+            args.forEach(function(arg) {
+                promises.push(prepInboundValue(wyrmhole, wyrmlingStore, arg));
+            });
+            retVal = Deferred.all(promises).then(function(args) {
+                return obj.apply(null, args);
+            });
         }
         return Deferred.when(retVal).then(function(val) {
             return prepOutboundValue(wyrmlingStore, val).then(function(v) {

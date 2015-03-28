@@ -249,8 +249,13 @@ describe("sending objects across the Wyrmhole", function() {
         });
 
         describe("functions", function() {
+            var args;
             beforeEach(function() {
-                queenling.setProperty(prop, function add(a,b,c) { return 0 + a + b + c; });
+                args = (void 0);
+                queenling.setProperty(prop, function add(a,b,c) {
+                    args = Array.prototype.slice.call(arguments, 0);
+                    return 0 + a + b + c;
+                });
                 clock.flush();
                 objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
                 objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
@@ -290,6 +295,16 @@ describe("sending objects across the Wyrmhole", function() {
                 mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, '', [1,2,3]]);
                 expect(mockWyrmhole.lastInbound.status).toBe('success');
                 expect(mockWyrmhole.lastInbound.response).toBe(6);
+            });
+            it("'Invoke' should get arguments after they've been processed", function() {
+                mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, '', [
+                    { $type: 'binary', data: 'Mg==' },
+                    { $type: 'ref', data: [1, 9] },
+                    4
+                ]]);
+                // respond to Enum
+                mockWyrmhole.lastOutbound.success([]);
+                expect(args).toEqual([jasmine.any(ArrayBuffer), jasmine.any(Function), 4]);
             });
             it("'Invoke' should fail for non-function properties", function() {
                 mockWyrmhole.triggerInbound(['Invoke', objSpawnId, objObjectId, 'isObj', []]);
