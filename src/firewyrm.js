@@ -1,6 +1,6 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
 'use strict';
-define(['./deferred', './tools'], function(Deferred, tools) {
+define(['./deferred', './tools', './browser'], function(Deferred, tools, browser) {
     FireWyrmJS.asVal = tools.asVal;
     return FireWyrmJS;
 
@@ -62,5 +62,8 @@ define(['./deferred', './tools'], function(Deferred, tools) {
                 supportedTypes[type] = factory;
             });
         }
+
+        // Register the 'browser' object before bailing
+        register('browser', browser);
     }
 });
