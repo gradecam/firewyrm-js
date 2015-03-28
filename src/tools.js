@@ -114,7 +114,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
     // stores this as a localWyrmling, if necessary
     function prepOutboundValue(wyrmlingStore, val) {
         return Deferred.when(val).then(function(v) {
-            if (isPrimitive(v) || v.$type === 'json' || v.$type === 'binary') {
+            if (isPrimitive(v) || v.$type === 'json' || v.$type === 'binary' || v.$type === 'error') {
                 return v;
             }
             var id = wyrmlingStore.nextId;
@@ -308,7 +308,10 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         }
         return Deferred.when(retVal).then(function(val) {
             return prepOutboundValue(wyrmlingStore, val).then(function(v) {
-                cb('success', v);
+                if (v && v.$type === 'error') {
+                    return cb('error', v.data);
+                }
+                return cb('success', v);
             });
         }, function(error) {
             var type = prop ? 'property' : 'object';
