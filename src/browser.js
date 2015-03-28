@@ -1,6 +1,6 @@
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
 (function(globalScope) {
-    define([], function() {
+    define(['./tools'], function(tools) {
         return function(params) {
             params = params || {};
             var browser = {};
@@ -25,8 +25,28 @@ if (typeof define !== 'function') { var define = require('amdefine')(module); }
             }
             function getDocument() { return globalScope.document; }
             function getWindow() { return globalScope.window; }
-            function readArray() { }
-            function readObject() { }
+            function readArray(arr) {
+                if (!arr) {
+                    return { $type: 'error', data: { error: 'invalid object', message: 'The object does not exist' }};
+                }
+                if (!tools.isArray(arr)) {
+                    return { $type: 'error', data: { error: 'invalid object', message: 'Object is not an array' }};
+                }
+                // special type that will send the object as value, but any of its top-level
+                // items are subject to being sent as references -- no nesting
+                return { $type: 'one-level', data: arr };
+            }
+            function readObject(obj) {
+                if (!obj) {
+                    return { $type: 'error', data: { error: 'invalid object', message: 'The object does not exist' }};
+                }
+                if (!tools.isObject(obj)) {
+                    return { $type: 'error', data: { error: 'invalid object', message: 'Object is not a plain object' }};
+                }
+                // special type that will send the object as value, but any of its top-level
+                // items are subject to being sent as references -- no nesting
+                return { $type: 'one-level', data: obj };
+            }
         };
     });
 }(typeof(global) !== 'undefined' ? global : this));

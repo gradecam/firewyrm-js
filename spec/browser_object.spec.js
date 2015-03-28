@@ -1,5 +1,6 @@
 /* globals jasmine, beforeEach, afterEach, describe, it, expect */
 'use strict';
+var b64Buffer = require('base64-arraybuffer');
 var clock = require('./helpers/clock');
 var defaults = require('./helpers/defaults');
 var FireWyrmJS = require('../src/firewyrm');
@@ -38,7 +39,7 @@ describe("browser object", function() {
         }
     });
     function setLocalWyrmling(obj) {
-        // so it gets saved off locally
+        // send via queenling so it gets saved off as a local wyrmling
         queenling[prop] = obj;
         clock.flush();
         propSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
@@ -92,6 +93,56 @@ describe("browser object", function() {
             expect(mockWyrmhole.lastInbound.response).toEqual({ $type: 'ref', data: [jasmine.any(Number), jasmine.any(Number)] });
             expect(getPropFromWyrmling(mockWyrmhole.lastInbound.response, 'wyrmtest')).toBe('wyrmtest');
             delete jasmine.getGlobal().window.wyrmtest;
+        });
+    });
+
+    describe("readArray", function() {
+        it("should return the array kinda-mostly-sorta by value", function() {
+            setLocalWyrmling([ 2, false, 'string', { isObj: true} ]);
+            mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'readArray', [{ $type: 'local-ref', data: [propSpawnId, propObjectId]}]]);
+            expect(mockWyrmhole.lastInbound.status).toBe('success');
+            expect(mockWyrmhole.lastInbound.response).toEqual([2, false, 'string', { $type: 'ref', data: jasmine.any(Array)}]);
+        });
+        it("should fail if the spawnId / objectId combination is bad", function() {
+            mockWyrmhole.triggerInbound(['Invoke', 666, 999, 'readArray', [{ $type: 'local-ref', data: [propSpawnId, propObjectId]}]]);
+            expect(mockWyrmhole.lastInbound.status).toBe('error');
+            expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'The object does not exist' });
+        });
+        it("should fail if a non-array is provided", function() {
+            setLocalWyrmling({ isObj: true });
+            mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'readArray', [{ $type: 'local-ref', data: [propSpawnId, propObjectId]}]]);
+            expect(mockWyrmhole.lastInbound.status).toBe('error');
+            expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'Object is not an array' });
+        });
+    });
+
+    describe("readObject", function() {
+        it("should return the object kinda-mostly-sorta by value", function() {
+            setLocalWyrmling({
+                a: 1,
+                buf: FireWyrmJS.asVal(b64Buffer.decode('Mg==')),
+                arr: [3],
+                str: 'string'
+            });
+            mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'readObject', [{ $type: 'local-ref', data: [propSpawnId, propObjectId]}]]);
+            expect(mockWyrmhole.lastInbound.status).toBe('success');
+            expect(mockWyrmhole.lastInbound.response).toEqual({
+                a: 1,
+                buf: { $type: 'binary', data: 'Mg==' },
+                arr: { $type: 'ref', data: jasmine.any(Array) },
+                str: 'string'
+            });
+        });
+        it("should fail if the spawnId / objectId combination is bad", function() {
+            mockWyrmhole.triggerInbound(['Invoke', 666, 999, 'readObject', [{ $type: 'local-ref', data: [propSpawnId, propObjectId]}]]);
+            expect(mockWyrmhole.lastInbound.status).toBe('error');
+            expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'The object does not exist' });
+        });
+        it("should fail if a non-object is provided", function() {
+            setLocalWyrmling([ 1 ]);
+            mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'readObject', [{ $type: 'local-ref', data: [propSpawnId, propObjectId]}]]);
+            expect(mockWyrmhole.lastInbound.status).toBe('error');
+            expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'Object is not a plain object' });
         });
     });
 });

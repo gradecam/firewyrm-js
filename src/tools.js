@@ -11,6 +11,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         handleMessage: handleMessage,
         isArray: isArray,
         isFunction: isFunction,
+        isObject: isObject,
         wrapAlienWyrmling: wrapAlienWyrmling,
     };
 
@@ -19,7 +20,8 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         var newStore = {};
         Object.defineProperties(newStore, {
             spawnId: { value: spawnId },
-            nextId: { get: function() { return nextId++; } }
+            nextId: { get: function() { return nextId++; } },
+            baseStore: { value: baseStore }
         });
         Object.defineProperty(baseStore, spawnId, { value: newStore, configurable: true });
         return newStore;
@@ -117,6 +119,14 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             if (isPrimitive(v) || v.$type === 'json' || v.$type === 'binary' || v.$type === 'error') {
                 return v;
             }
+            if (v.$type === 'one-level') {
+                for (var prop in v.data) {
+                    if (v.data.hasOwnProperty(prop)) {
+                        v.data[prop] = prepOutboundValue(wyrmlingStore, v.data[prop]);
+                    }
+                }
+                return Deferred.all(v.data);
+            }
             var id = wyrmlingStore.nextId;
             wyrmlingStore[id] = v;
             return { $type: 'ref', data: [wyrmlingStore.spawnId, id] };
@@ -136,6 +146,13 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
     }
     function prepInboundValue(wyrmhole, wyrmlingStore, val) {
         if (isPrimitive(val)) { return Deferred.when(val); }
+        if (val.$type === 'local-ref') {
+            var store = wyrmlingStore.baseStore;
+            if (store[val.data[0]] && val.data[1] in store[val.data[0]]) {
+                return store[val.data[0]][val.data[1]];
+            }
+            return (void 0); // bad local-ref, receiver has to just deal with it
+        }
         if (val.$type === 'ref') {
             return wrapAlienWyrmling(wyrmhole, wyrmlingStore, val.data[0], val.data[1]);
         }
@@ -296,8 +313,6 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             } else if (!isFunction(obj[prop])) {
                 return cb('error', { error: 'could not invoke property', message: 'Property is not callable' });
             }
-            // TODO: this needs to use prepInboundValue and wait for them all to be finished up
-            retVal = obj[prop].apply(obj, args);
             args.forEach(function(arg) {
                 promises.push(prepInboundValue(wyrmhole, wyrmlingStore, arg));
             });
@@ -309,8 +324,6 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             if (!isFunction(obj)) {
                 return cb('error', { error: 'could not invoke object', message: 'Object is not callable' });
             }
-            // TODO: this needs to use prepInboundValue and wait for them all to be finished up
-            retVal = obj.apply(null, args);
             args.forEach(function(arg) {
                 promises.push(prepInboundValue(wyrmhole, wyrmlingStore, arg));
             });
@@ -361,5 +374,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
     }
 
     function isNumber(val) { return toString.call(val) === '[object Number]' && !isNaN(val); }
+    // match plain objects, not special things like null or ArrayBuffer
+    function isObject(val) { return val && toString.call(val) === '[object Object]'; }
     function isString(val) { return typeof(val) === 'string'; }
 });
