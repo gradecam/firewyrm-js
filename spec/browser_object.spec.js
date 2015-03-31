@@ -9,7 +9,8 @@ var lifecycle = require('./helpers/lifecycle');
 describe("browser object", function() {
     var mockWyrmhole, queenling, browserSpawnId, propSpawnId, propObjectId,
         fakeWindow, fakeDocument,
-        prop = defaults.newQueenlingProps[2]; // complexProp
+        complexProp = defaults.newQueenlingProps[2], // complexProp
+        fnProp = defaults.newQueenlingProps[3]; // functionProp
 
     beforeEach(function() {
         clock.install();
@@ -38,12 +39,14 @@ describe("browser object", function() {
             fakeDocument = (void 0);
         }
     });
-    function setLocalWyrmling(obj) {
+    function setLocalWyrmling(obj, prop) {
+        prop = prop || complexProp;
         // send via queenling so it gets saved off as a local wyrmling
         queenling[prop] = obj;
         clock.flush();
         propSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
         propObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
+        return [propSpawnId, propObjectId];
     }
     function getPropFromWyrmling(ref, prop) {
         mockWyrmhole.triggerInbound(['GetP', ref.data[0], ref.data[1], prop]);
@@ -143,6 +146,108 @@ describe("browser object", function() {
             mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'readObject', [{ $type: 'local-ref', data: [propSpawnId, propObjectId]}]]);
             expect(mockWyrmhole.lastInbound.status).toBe('error');
             expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid object', message: 'Object is not a plain object' });
+        });
+    });
+
+    describe("invokeWithDelay", function() {
+        var delay = 100, fn, args, context,
+            fnSpawnId, fnObjectId;
+        beforeEach(function() {
+            fn = args = context = (void 0);
+            delete global.__invokeWithDelayResult;
+            delete global.__invokeWithDelayArguments;
+            fn = function(a, b) {
+                global.__invokeWithDelayResult = this + ': ' + a + ' ' + b;
+                global.__invokeWithDelayArguments = Array.prototype.slice.call(arguments, 0);
+            };
+            var ids = setLocalWyrmling(fn, fnProp);
+            fnSpawnId = ids[0];
+            fnObjectId = ids[1];
+            context = { isObj: true };
+            context.toString = function() { return '[WYRMTEST]'; };
+            setLocalWyrmling(context);
+
+        });
+        it("should return null", function() {
+            mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'invokeWithDelay', [
+                delay,
+                { $type: 'local-ref', data: [fnSpawnId, fnObjectId] },
+                ['a', 'b'],
+                { $type: 'local-ref', data: [propSpawnId, propObjectId] },
+            ]]);
+            expect(mockWyrmhole.lastInbound.status).toBe('success');
+            expect(mockWyrmhole.lastInbound.response).toBe(null);
+        });
+        it("should only invoke the function after the specified delay", function() {
+            var _flush = clock.flush;
+            clock.flush = function() {};
+            mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'invokeWithDelay', [
+                delay,
+                { $type: 'local-ref', data: [fnSpawnId, fnObjectId] },
+                ['a', 'b'],
+                { $type: 'local-ref', data: [propSpawnId, propObjectId] },
+            ]]);
+            expect(global.__invokeWithDelayResult).toBeUndefined();
+            jasmine.clock().tick(100);
+            expect(global.__invokeWithDelayResult).toEqual('[WYRMTEST]: a b');
+            clock.flush = _flush;
+        });
+        it("should resolve nested wyrmlings within the args array", function() {
+            mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'invokeWithDelay', [
+                delay,
+                { $type: 'local-ref', data: [fnSpawnId, fnObjectId] },
+                [
+                    'a',
+                    'b',
+                    { $type: 'ref', data: [666, 667] },
+                    { nested: { $type: 'ref', data: [777, 778] } }
+                ],
+                { $type: 'local-ref', data: [propSpawnId, propObjectId] },
+            ]]);
+            expect(mockWyrmhole.getOutbound(-2).args).toEqual(['Enum', 666, 667]);
+            mockWyrmhole.getOutbound(-2).success([]);
+            expect(mockWyrmhole.getOutbound(-1).args).toEqual(['Enum', 777, 778]);
+            mockWyrmhole.getOutbound(-1).success([]);
+            expect(global.__invokeWithDelayArguments[2]).toBeAWyrmling();
+            expect(global.__invokeWithDelayArguments[3].nested).toBeAWyrmling();
+        });
+        it("should use null as the context if not provided", function() {
+            mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'invokeWithDelay', [
+                delay,
+                { $type: 'local-ref', data: [fnSpawnId, fnObjectId] },
+                ['a', 'b']
+            ]]);
+            expect(global.__invokeWithDelayResult).toEqual('null: a b');
+        });
+
+        describe("failure cases", function() {
+            it("should blow up if a non-numeric delay is provided", function() {
+                mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'invokeWithDelay', [
+                    '100',
+                    { $type: 'local-ref', data: [fnSpawnId, fnObjectId] },
+                    ['a', 'b']
+                ]]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid parameters', message: jasmine.any(String)});
+            });
+            it("should blow up if a non-function fn is provided", function() {
+                mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'invokeWithDelay', [
+                    100,
+                    { $type: 'local-ref', data: [propSpawnId, propObjectId] },
+                    ['a', 'b']
+                ]]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid parameters', message: jasmine.any(String)});
+            });
+            it("should blow up if a non-array fn is provided", function() {
+                mockWyrmhole.triggerInbound(['Invoke', browserSpawnId, 0, 'invokeWithDelay', [
+                    100,
+                    { $type: 'local-ref', data: [fnSpawnId, fnObjectId] },
+                    'a'
+                ]]);
+                expect(mockWyrmhole.lastInbound.status).toBe('error');
+                expect(mockWyrmhole.lastInbound.response).toEqual({ error: 'invalid parameters', message: jasmine.any(String)});
+            });
         });
     });
 });

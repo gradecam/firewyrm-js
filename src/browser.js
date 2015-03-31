@@ -5,11 +5,12 @@ if (typeof define !== 'function') { var define = require('amdefine')(module); }
             params = params || {};
             var browser = {};
             Object.defineProperties(browser, {
-                'eval': { value: evalFn, writable: true },
-                getDocument: { value: getDocument, writable: true },
-                getWindow: { value: getWindow, writable: true },
-                readArray: { value: readArray, writable: true },
-                readObject: { value: readObject, writable: true },
+                'eval': { value: evalFn, enumerable: true },
+                getDocument: { value: getDocument, enumerable: true },
+                getWindow: { value: getWindow, enumerable: true },
+                invokeWithDelay: { value: invokeWithDelay, enumerable: true },
+                readArray: { value: readArray, enumerable: true },
+                readObject: { value: readObject, enumerable: true },
             });
             return browser;
 
@@ -23,8 +24,24 @@ if (typeof define !== 'function') { var define = require('amdefine')(module); }
                     return ret;
                 }
             }
+
+            function invokeWithDelay(delay, fn, args, context) {
+                context = context || null;
+                if (!(tools.isNumber(delay) && tools.isFunction(fn) && tools.isArray(args))) {
+                    return { $type: 'error', data: { error: 'invalid parameters', message: 'Must provide at least delay (Number), fn (Function), and args (Array)'}};
+                }
+
+                setTimeout(function() {
+                    fn.apply(context, args);
+                }, delay);
+
+                return null;
+            }
+
             function getDocument() { return globalScope.document; }
+
             function getWindow() { return globalScope.window; }
+
             function readArray(arr) {
                 if (!arr) {
                     return { $type: 'error', data: { error: 'invalid object', message: 'The object does not exist' }};
@@ -36,6 +53,7 @@ if (typeof define !== 'function') { var define = require('amdefine')(module); }
                 // items are subject to being sent as references -- no nesting
                 return { $type: 'one-level', data: arr };
             }
+
             function readObject(obj) {
                 if (!obj) {
                     return { $type: 'error', data: { error: 'invalid object', message: 'The object does not exist' }};

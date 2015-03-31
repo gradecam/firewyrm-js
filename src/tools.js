@@ -11,6 +11,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         handleMessage: handleMessage,
         isArray: isArray,
         isFunction: isFunction,
+        isNumber: isNumber,
         isObject: isObject,
         wrapAlienWyrmling: wrapAlienWyrmling,
     };
