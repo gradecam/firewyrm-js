@@ -47,7 +47,16 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
 
     // performs Enum and creates the getters / setters / etc.
     function wrapAlienWyrmling(wyrmhole, wyrmlingStore, spawnId, objectId) {
-        var send = Deferred.fn(wyrmhole, 'sendMessage');
+        var send = function(args) {
+            var dfd = Deferred();
+            var callback = function(status, resp) {
+                if (status === 'success') { dfd.resolve(resp); }
+                else { dfd.reject(resp); }
+            };
+            wyrmhole.sendMessage(args, callback);
+            return dfd.promise;
+        };
+
         var wyrmling = function() {
             var args = [''].concat(Array.prototype.slice.call(arguments, 0));
             return wyrmling.invoke.apply(wyrmling, args);
