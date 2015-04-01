@@ -82,6 +82,7 @@ describe("releasing objects received over the Wyrmhole", function() {
     describe("Invoke", function() {
         it("should automatically release objects that haven't been retained", function() {
             var x = queenling.invoke(prop);
+            clock.flush(); // handle prepOutboundArguments
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Invoke', queenling.spawnId, queenling.objectId, prop, []]);
             mockWyrmhole.lastOutbound.success({ $type: 'ref', data: [60, 61]});
             // We should now have a wrapped alienWyrmling which calls Enum.
@@ -100,6 +101,7 @@ describe("releasing objects received over the Wyrmhole", function() {
                     alien = wyrmling;
                     alien.retain();
                 });
+                clock.flush(); // handle prepOutboundArguments
                 mockWyrmhole.lastOutbound.success({ $type: 'ref', data: [60, 61]});
                 // answer Enum
                 mockWyrmhole.lastOutbound.success([]);
@@ -144,7 +146,7 @@ describe("releasing objects received over the Wyrmhole", function() {
         it("should automatically release objects that haven't been retained", function() {
             var x = queenling[prop]();
             // first should be 'GetP'
-            expect(mockWyrmhole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop, []]);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['GetP', queenling.spawnId, queenling.objectId, prop]);
             mockWyrmhole.lastOutbound.success({ $type: 'ref', data: [50, 51]});
             // next should be 'Enum' for that thing
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 50, 51]);
@@ -225,6 +227,7 @@ describe("releasing objects received over the Wyrmhole", function() {
         beforeEach(function() {
             obj = { data: true };
             queenling[prop] = obj;
+            clock.flush(); // handle prepOutboundValue
             objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
             objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
             mockWyrmhole.lastOutbound.success(null);
@@ -235,7 +238,7 @@ describe("releasing objects received over the Wyrmhole", function() {
         it("should not autorelease the object", function() {
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 60, 61]);
             // even after 10 seconds, it should not have been released
-            clock.tick(10000);
+            jasmine.clock().tick(10000);
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 60, 61]);
         });
         it("should release the object of the other side sets the property again", function() {
@@ -245,9 +248,9 @@ describe("releasing objects received over the Wyrmhole", function() {
         it("should release the object after 5 seconds if our side replaces the value", function() {
             obj.data = false;
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 60, 61]);
-            clock.tick(3000);
+            jasmine.clock().tick(3000);
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 60, 61]);
-            clock.tick(2000);
+            jasmine.clock().tick(2000);
             expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
         });
         it("should release the object if the original wyrmling gets released", function() {
