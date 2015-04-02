@@ -31,8 +31,10 @@ if (typeof define !== 'function') { var define = require('amdefine')(module); }
                     return { $type: 'error', data: { error: 'invalid parameters', message: 'Must provide at least delay (Number), fn (Function), and args (Array)'}};
                 }
 
+                var releaseWyrmlings = tools.retainAllWyrmlings(args);
                 setTimeout(function() {
                     fn.apply(context, args);
+                    releaseWyrmlings();
                 }, delay);
 
                 return null;

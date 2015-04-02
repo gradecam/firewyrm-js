@@ -159,10 +159,9 @@ describe("releasing objects received over the Wyrmhole", function() {
             mockWyrmhole.lastOutbound.success([]);
             // we're now done with our automatic workflows and x should be a wyrmling
             expect(x).toBeResolved();
-            // we didn't retain, so next should be 'RelObj' on the result of the original GetP
-            expect(mockWyrmhole.getOutbound(-2).args).toEqual(['RelObj', 50, 51]);
-            // last should be 'RelObj' on the result of the Invoke
-            expect(mockWyrmhole.getOutbound(-1).args).toEqual(['RelObj', 60, 61]);
+            // we didn't retain, so it should release them both in reverse order
+            expect(mockWyrmhole.getOutbound(-2).args).toEqual(['RelObj', 60, 61]);
+            expect(mockWyrmhole.getOutbound(-1).args).toEqual(['RelObj', 50, 51]);
         });
 
         describe("if the response object is manually retained", function() {
@@ -218,6 +217,49 @@ describe("releasing objects received over the Wyrmhole", function() {
                     clock.flush();
                     expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
                 });
+            });
+        });
+    });
+
+    describe("objects sent by the other side via Invoke", function() {
+        function setLocalWyrmling(obj) {
+            // send via queenling so it gets saved off as a local wyrmling
+            queenling[prop] = obj;
+            clock.flush(); // handle prepOutboundValue
+            var propSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
+            var propObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
+            mockWyrmhole.lastOutbound.success(null); // respond to SetP
+            return [propSpawnId, propObjectId];
+        }
+        it("should autorelease wyrmlings sent as function arguments", function() {
+            var ids = setLocalWyrmling(function(){});
+            mockWyrmhole.triggerInbound(['Invoke', ids[0], ids[1], '', [
+                { $type: 'ref', data: [666, 667] }
+            ]]);
+            mockWyrmhole.lastOutbound.success([]); // respond to Enum
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 666, 667]);
+        });
+
+        describe("if the function argument is retained", function() {
+            var alien;
+            beforeEach(function() {
+                var ids = setLocalWyrmling(function(thing) {
+                    alien = thing;
+                    alien.retain();
+                });
+                mockWyrmhole.triggerInbound(['Invoke', ids[0], ids[1], '', [
+                    { $type: 'ref', data: [666, 667] }
+                ]]);
+                mockWyrmhole.lastOutbound.success([]); // respond to Enum
+            });
+            it("should not autorelease", function() {
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 666, 667]);
+            });
+            it("should send RelObj asynchronously after we release the object", function() {
+                alien.release();
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 666, 667]);
+                clock.flush();
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 666, 667]);
             });
         });
     });

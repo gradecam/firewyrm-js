@@ -52,7 +52,7 @@ describe("sending objects across the Wyrmhole", function() {
                 function noop() {}
             ];
             queenling.setProperty(prop, complexArray);
-            clock.flush();
+            clock.flush(); // handle prepOutboundValue
             objSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
             objObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
             mockWyrmhole.lastOutbound.success(null); // mimic success and finish processing any callbacks

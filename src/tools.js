@@ -13,18 +13,82 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         isFunction: isFunction,
         isNumber: isNumber,
         isObject: isObject,
+        retainAllWyrmlings: retainAllWyrmlings,
         wrapAlienWyrmling: wrapAlienWyrmling,
     };
 
-    function addWyrmlingStore(baseStore, spawnId) {
+    function addWyrmlingStore(baseStore, spawnId, rootObject) {
         var nextId = 1;
         var newStore = {};
         Object.defineProperties(newStore, {
+            baseStore: { value: baseStore },
             spawnId: { value: spawnId },
-            nextId: { get: function() { return nextId++; } },
-            baseStore: { value: baseStore }
+            destroy: { value: function() {
+                Object.keys(newStore).forEach(function(objectId) {
+                    newStore.releaseObject(objectId);
+                });
+                delete baseStore[spawnId];
+            }},
+            getObject: { value: function(objectId) {
+                return newStore[objectId] && newStore[objectId][0];
+            }},
+            putObject: { value: function(obj) {
+                var id = nextId++;
+                newStore[id] = [obj];
+                return id;
+            }},
+            releaseObject: { value: function(objectId) {
+                var wyrmlingProperties = newStore.getWyrmlingProperties(objectId);
+                Object.keys(wyrmlingProperties).forEach(function(prop) {
+                    wyrmlingProperties[prop].release();
+                });
+                clearInterval(wyrmlingProperties.__timer);
+                wyrmlingProperties.__timer = null;
+                delete newStore[objectId];
+            }},
+            setObjectProperty: { value: function(objectId, prop, val) {
+                var obj = newStore.getObject(objectId);
+                var wyrmlingProperties = newStore.getWyrmlingProperties(objectId);
+                if (wyrmlingProperties[prop]) {
+                    wyrmlingProperties[prop].release();
+                    delete wyrmlingProperties[prop];
+                }
+                obj[prop] = val;
+                if (isWyrmling(val)) {
+                    wyrmlingProperties[prop] = val;
+                    val.retain();
+                }
+                var wyrmPropKeys = Object.keys(wyrmlingProperties).length;
+                if (wyrmPropKeys === 0 && wyrmlingProperties.__timer) {
+                    clearInterval(wyrmlingProperties.__timer);
+                    wyrmlingProperties.__timer = null;
+                } else if (wyrmPropKeys && !wyrmlingProperties.__timer) {
+                    wyrmlingProperties.__timer = setInterval(function() {
+                        for (var prop in wyrmlingProperties) {
+                            if (wyrmlingProperties.hasOwnProperty(prop)) {
+                                newStore.setObjectProperty(objectId, prop, obj[prop]);
+                            }
+                        }
+                    }, 5000);
+                }
+            }},
+            getWyrmlingProperties: { value: function(objectId) {
+                var arr = newStore[objectId];
+                if (!isArray(arr)) { return {}; }
+                if (isObject(arr[1])) { return arr[1]; }
+                var wyrmlingProperties = {};
+                Object.defineProperty(wyrmlingProperties, '__timer', {
+                    value: null,
+                    writable: true
+                });
+                arr[1] = wyrmlingProperties;
+                return wyrmlingProperties;
+            }}
         });
         Object.defineProperty(baseStore, spawnId, { value: newStore, configurable: true });
+        if (rootObject !== (void 0)) {
+            newStore[0] = [rootObject];
+        }
         return newStore;
     }
 
@@ -47,20 +111,24 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
 
     // performs Enum and creates the getters / setters / etc.
     function wrapAlienWyrmling(wyrmhole, wyrmlingStore, spawnId, objectId) {
+        var refCount = 0;
         var send = function(args) {
+            wyrmling.retain();
             var dfd = Deferred();
             var callback = function(status, resp) {
                 if (status === 'success') { dfd.resolve(resp); }
                 else { dfd.reject(resp); }
+                wyrmling.release();
             };
             wyrmhole.sendMessage(args, callback);
             return dfd.promise;
         };
-
         var wyrmling = function() {
             var args = [''].concat(Array.prototype.slice.call(arguments, 0));
             return wyrmling.invoke.apply(wyrmling, args);
         };
+        var wyrmlingProperties = {};
+        Object.defineProperty(wyrmlingProperties, '__timer', { value: null, writable: true });
         // Add our helper properties
         defineProperties(wyrmling, {
             spawnId: spawnId,
@@ -76,9 +144,14 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
                 function magicalFn() {
                     var args = Array.prototype.slice.call(arguments, 0);
                     return getPromise.then(function() {
-                        return isFunction(getPropVal) ?
-                            getPropVal.apply(null, args) :
-                            Deferred.reject({ error: 'could not invoke', message: 'The object is not invokable' });
+                        if (isWyrmling(getPropVal)) {
+                            getPropVal.retain();
+                            var invokePromise = getPropVal.apply(null, args);
+                            Deferred.always(invokePromise, function() { getPropVal.release(); });
+                            return invokePromise;
+                        } else {
+                            return Deferred.reject({ error: 'could not invoke', message: 'The object is not invokable' });
+                        }
                     });
                 }
                 magicalFn.then = getPromise.then;
@@ -96,6 +169,16 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
                 }).then(function(val) {
                     return prepInboundValue(wyrmhole, wyrmlingStore, val);
                 });
+            },
+            retain: function() {
+                refCount++;
+            },
+            release: function() {
+                refCount--;
+                if (objectId === 0) { return; } // queenlings must be manually destroyed
+                setTimeout(function() { if (!refCount) {
+                    send(['RelObj', spawnId, objectId]);
+                }}, 10);
             }
         });
         return send(['Enum', spawnId, objectId]).then(function(props) {
@@ -137,9 +220,9 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
                 }
                 return Deferred.all(v.data);
             }
-            var id = wyrmlingStore.nextId;
-            wyrmlingStore[id] = v;
-            return { $type: 'ref', data: [wyrmlingStore.spawnId, id] };
+            // this is an object we need to send by reference; store and send
+            var objectId = wyrmlingStore.putObject(v);
+            return { $type: 'ref', data: [wyrmlingStore.spawnId, objectId] };
         });
     }
     // returns after prepOutboundValue has resolved for each arg
@@ -155,30 +238,48 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         });
     }
     function prepInboundValue(wyrmhole, wyrmlingStore, val) {
-        if (isPrimitive(val)) { return Deferred.when(val); }
-        if (val.$type === 'local-ref') {
-            var store = wyrmlingStore.baseStore;
-            if (store[val.data[0]] && val.data[1] in store[val.data[0]]) {
-                return store[val.data[0]][val.data[1]];
+        return Deferred.when(val).then(function() {
+            if (isPrimitive(val)) { return val; }
+            if (val.$type === 'local-ref') {
+                var store = wyrmlingStore.baseStore;
+                if (store[val.data[0]] && val.data[1] in store[val.data[0]]) {
+                    return store[val.data[0]].getObject(val.data[1]);
+                }
+                return (void 0); // bad local-ref, receiver has to just deal with it
             }
-            return (void 0); // bad local-ref, receiver has to just deal with it
-        }
-        if (val.$type === 'ref') {
-            return wrapAlienWyrmling(wyrmhole, wyrmlingStore, val.data[0], val.data[1]);
-        }
-        if (val.$type === 'json') {
-            return Deferred.when(val.data);
-        }
-        if (val.$type === 'binary') {
-            return b64Buffer.decode(val.data);
-        }
-        // this must be an object, so recursively make it magical
-        for (var prop in val) {
-            if (val.hasOwnProperty(prop)) {
-                val[prop] = prepInboundValue(wyrmhole, wyrmlingStore, val[prop]);
+            if (val.$type === 'ref') {
+                return wrapAlienWyrmling(wyrmhole, wyrmlingStore, val.data[0], val.data[1]);
             }
-        }
-        return Deferred.all(val);
+            if (val.$type === 'json') {
+                return val.data;
+            }
+            if (val.$type === 'binary') {
+                return b64Buffer.decode(val.data);
+            }
+
+            // This must be an object, so recursively make it magical. Since any property could
+            // be a wyrmling, retain them until everything is ready so autorelease doesn't kick
+            // in if another wyrmling happens to take a long time to get back from Enum, etc.
+            var wyrmlings = [];
+            function retainIfWyrmling(v) {
+                if (isWyrmling(v)) {
+                    v.retain();
+                    wyrmlings.push(v);
+                }
+                return v;
+            }
+            for (var prop in val) {
+                if (val.hasOwnProperty(prop)) {
+                    val[prop] = prepInboundValue(wyrmhole, wyrmlingStore, val[prop]).then(retainIfWyrmling);
+                }
+            }
+            var allFinishedPromise = Deferred.all(val);
+            Deferred.always(allFinishedPromise, function() {
+                // everything is ready now, so get the release flow back on track
+                wyrmlings.forEach(function(ling) { ling.release(); });
+            });
+            return allFinishedPromise;
+        });
     }
 
     function isValidMessage(msg) {
@@ -206,7 +307,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         return msg[1] in baseWyrmlingStore ? baseWyrmlingStore[msg[1]] : {};
     }
     function getObject(wyrmlingStore, msg) {
-        return msg[2] in wyrmlingStore ? wyrmlingStore[msg[2]] : null;
+        return msg[2] in wyrmlingStore ? wyrmlingStore.getObject(msg[2]) : null;
     }
     function handleMessage(wyrmhole, baseWyrmlingStore, supportedTypes, msg, cb) {
         if (!isValidMessage(msg)) {
@@ -227,7 +328,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             case 'Enum': return handleEnum(obj, cb);
             case 'DelP': return handleDelP(store, obj, msg[3], cb);
             case 'GetP': return handleGetP(store, obj, msg[3], cb);
-            case 'SetP': return handleSetP(wyrmhole, store, obj, msg[3], msg[4], cb);
+            case 'SetP': return handleSetP(wyrmhole, store, obj, msg[2], msg[3], msg[4], cb);
             case 'RelObj': return handleRelObj(store, msg[2], cb);
             case 'Invoke': return handleInvoke(wyrmhole, store, obj, msg[3], msg[4], cb);
         }
@@ -240,8 +341,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             var princessling = supportedTypes[msg[1]](msg[2] || {});
             baseWyrmlingStore.nextId = baseWyrmlingStore.nextId || 1;
             var spawnId = baseWyrmlingStore.nextId++;
-            var wyrmlingStore = addWyrmlingStore(baseWyrmlingStore, spawnId);
-            wyrmlingStore[0] = princessling;
+            addWyrmlingStore(baseWyrmlingStore, spawnId, princessling);
             cb('success', spawnId);
         } catch(error) {
             cb('error', { error: 'could not create object', message: error && error.message || 'There was an unidentified error creating the object'});
@@ -249,12 +349,12 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
     }
     function handleDestroy(baseWyrmlingStore, supportedTypes, msg, cb) {
         var spawnId = msg[1];
-        if (!baseWyrmlingStore[spawnId] || !baseWyrmlingStore[spawnId][0]) {
+        if (!baseWyrmlingStore[spawnId] || !baseWyrmlingStore[spawnId].getObject(0)) {
             return cb('error', { error: 'could not destroy object', message: 'The object does not exist' });
         }
         try {
-            var princessling = baseWyrmlingStore[spawnId][0];
-            delete baseWyrmlingStore[spawnId];
+            var princessling = baseWyrmlingStore[spawnId].getObject(0);
+            baseWyrmlingStore[spawnId].destroy();
             if (isFunction(princessling._onDestroy)) {
                 princessling._onDestroy();
             }
@@ -295,13 +395,13 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
             cb('success', val);
         });
     }
-    function handleSetP(wyrmhole, wyrmlingStore, obj, prop, val, cb) {
+    function handleSetP(wyrmhole, wyrmlingStore, obj, objectId, prop, val, cb) {
         if (!obj.hasOwnProperty(prop)) {
             return cb('error', { error: 'could not set property', message: 'Property does not exist on this object' });
         }
         prepInboundValue(wyrmhole, wyrmlingStore, val).then(function(v) {
             try {
-                obj[prop] = v;
+                wyrmlingStore.setObjectProperty(objectId, prop, v);
                 cb('success', null);
             } catch(error) {
                 cb('error', { error: 'could not set property', message: error && error.message || 'There was an unidentified error deleting the property'});
@@ -312,7 +412,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
     }
     function handleRelObj(wyrmlingStore, objectId, cb) {
         if (objectId === 0) { return; } // root objects cannot be released, they must be destroyed
-        delete wyrmlingStore[objectId];
+        wyrmlingStore.releaseObject(objectId);
         cb('success', null);
     }
     function handleInvoke(wyrmhole, wyrmlingStore, obj, prop, args, cb) {
@@ -354,6 +454,27 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
         });
     }
 
+    function findWyrmlings(thing) {
+        var wyrmlings = [];
+        if (isWyrmling(thing)) {
+            return [thing];
+        } else if (isArray(thing) || isObject(thing)) {
+            for (var prop in thing) {
+                if (thing.hasOwnProperty(prop)) {
+                    wyrmlings = wyrmlings.concat(findWyrmlings(thing[prop]));
+                }
+            }
+        }
+        return wyrmlings;
+    }
+    function retainAllWyrmlings(thing) {
+        var wyrmlings = findWyrmlings(thing);
+        wyrmlings.forEach(function(ling) { ling.retain(); });
+        return function() {
+            wyrmlings.forEach(function(ling) { ling.release(); });
+        };
+    }
+
     function isPrimitive(val) {
         if (val === null) { return true; } // to avoid false positive on typeof 'object' test below
         switch (typeof val) {
@@ -387,4 +508,12 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
     // match plain objects, not special things like null or ArrayBuffer
     function isObject(val) { return val && toString.call(val) === '[object Object]'; }
     function isString(val) { return typeof(val) === 'string'; }
+    function isWyrmling(val) {
+        return isFunction(val) &&
+               val.hasOwnProperty('spawnId') &&
+               val.hasOwnProperty('objectId') &&
+               val.hasOwnProperty('getProperty') &&
+               val.hasOwnProperty('setProperty') &&
+               val.hasOwnProperty('invoke');
+    }
 });

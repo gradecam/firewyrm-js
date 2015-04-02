@@ -85,5 +85,16 @@ define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
         };
     };
 
+    Deferred.always = function(thennable, fn) {
+        if (!(thennable && thennable.then && fn)) { return; }
+        return thennable.then(function (success){
+            fn();
+            return success;
+        }, function(failure) {
+            fn();
+            return Deferred.reject(failure);
+        });
+    };
+
     return Deferred;
 });

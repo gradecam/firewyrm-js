@@ -230,6 +230,13 @@ describe("creating objects locally of a specified object type", function() {
                 mockWyrmhole.triggerInbound(['Destroy', 1]);
                 expect(princessling._destroyed).toBe(true);
             });
+            it("should RelObj any properties set by the other side via SetP", function() {
+                mockWyrmhole.triggerInbound(['SetP', 1, 0, 'complexProp', { $type: 'ref', data: [666, 667]}]);
+                mockWyrmhole.lastOutbound.success([]); // respond to Enum
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 666, 667]);
+                mockWyrmhole.triggerInbound(['Destroy', 1]);
+                expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 666, 667]);
+            });
         });
     });
 });

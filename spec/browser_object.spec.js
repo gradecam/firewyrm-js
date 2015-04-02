@@ -43,9 +43,10 @@ describe("browser object", function() {
         prop = prop || complexProp;
         // send via queenling so it gets saved off as a local wyrmling
         queenling[prop] = obj;
-        clock.flush();
+        clock.flush(); // handle prepOutboundValue
         propSpawnId = mockWyrmhole.lastOutbound.args[4].data[0];
         propObjectId = mockWyrmhole.lastOutbound.args[4].data[1];
+        mockWyrmhole.lastOutbound.success(null); // respond to SetP
         return [propSpawnId, propObjectId];
     }
     function getPropFromWyrmling(ref, prop) {
