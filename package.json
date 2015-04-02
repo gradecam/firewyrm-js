@@ -5,7 +5,8 @@
   "main": "firewyrm.js",
   "authors": [
     "Rob Porter <rob@gradecam.com>",
-    "Richard Bateman <rbateman@gradecam.com>"
+    "Richard Bateman <rbateman@gradecam.com>",
+    "Ben Loveridge <benl@gradecam.com>"
   ],
   "keywords": [],
   "license": "MIT",
@@ -16,8 +17,10 @@
     "underscore": "^1.8.2"
   },
   "dependencies": {
+    "almond": "^0.3.1",
     "amdefine": "^0.1.0",
     "base64-arraybuffer": "^0.1.2",
-    "fbpromise": "git://github.com/firebreath/fbpromise"
+    "fbpromise": "git://github.com/firebreath/fbpromise",
+    "requirejs": "^2.1.17"
   }
 }

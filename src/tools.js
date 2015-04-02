@@ -1,7 +1,7 @@
 /* global toString */
 'use strict';
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
-define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, b64Buffer) {
+define(['./deferred', './base64'], function(Deferred, base64) {
     var validMessages = {'New':true, 'Destroy':true, 'RelObj':true, 'Enum':true, 'DelP':true, 'GetP':true, 'SetP':true, 'Invoke':true};
 
     return {
@@ -95,7 +95,7 @@ define(['./deferred', '../node_modules/base64-arraybuffer'], function(Deferred, 
     function asVal(obj) {
         if (isPrimitive(obj)) { return obj; }
         if (obj instanceof ArrayBuffer) {
-            return { $type: 'binary', data: b64Buffer.encode(obj) };
+            return { $type: 'binary', data: base64.encode(obj) };
         }
         return { $type: 'json', data: obj };
     }

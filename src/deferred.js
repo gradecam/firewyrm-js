@@ -4,7 +4,7 @@
  */
 if (typeof define !== 'function') { var define = require('amdefine')(module); }
 define(['../node_modules/fbpromise/FireBreathPromise'], function(fbpromise) {
-    var Deferred = fbpromise.FireBreathPromise;
+    var Deferred = window.FireBreathPromise;
 
     Deferred.when = function(val) {
         var dfd = Deferred();
