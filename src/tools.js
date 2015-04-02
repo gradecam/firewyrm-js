@@ -111,7 +111,7 @@ define(['./deferred', './base64'], function(Deferred, base64) {
 
     // performs Enum and creates the getters / setters / etc.
     function wrapAlienWyrmling(wyrmhole, wyrmlingStore, spawnId, objectId) {
-        var refCount = 0;
+        var refCount = 0, released = false;
         var send = function(args) {
             wyrmling.retain();
             var dfd = Deferred();
@@ -134,6 +134,7 @@ define(['./deferred', './base64'], function(Deferred, base64) {
             spawnId: spawnId,
             objectId: objectId,
             getProperty: function(prop) {
+                if (released) { return; }
                 var getPropVal;
                 var getPromise = send(['GetP', spawnId, objectId, prop]).then(function(val) {
                     return prepInboundValue(wyrmhole, wyrmlingStore, val);
@@ -158,11 +159,13 @@ define(['./deferred', './base64'], function(Deferred, base64) {
                 return magicalFn;
             },
             setProperty: function(prop, val) {
+                if (released) { return; }
                 return prepOutboundValue(wyrmlingStore, val).then(function(v) {
                     return send(['SetP', spawnId, objectId, prop, v]);
                 });
             },
             invoke: function(prop) {
+                if (released) { return; }
                 var args = Array.prototype.slice.call(arguments, 1);
                 return prepOutboundArguments(wyrmlingStore, args).then(function(args) {
                     return send(['Invoke', spawnId, objectId, prop, args]);
@@ -176,9 +179,10 @@ define(['./deferred', './base64'], function(Deferred, base64) {
             release: function() {
                 refCount--;
                 if (objectId === 0) { return; } // queenlings must be manually destroyed
-                setTimeout(function() { if (!refCount) {
+                setTimeout(function() { if (!refCount && !released) {
                     send(['RelObj', spawnId, objectId]);
-                }}, 10);
+                    released = true;
+                }}, 5000);
             }
         });
         return send(['Enum', spawnId, objectId]).then(function(props) {
