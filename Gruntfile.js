@@ -27,9 +27,14 @@ module.exports = function(grunt) {
                 name: 'firewyrm',
             },
             options: {
+                ignore: ['grunt', 'grunt-cli'],
+                exclude: ['browserify', 'minifyify'],
                 minifiedExt: '.min.js',
                 mapExt: '.min.json',
-                outputFolder: 'dist'
+                outputFolder: 'dist',
+                browserifyOptions: {
+                    standalone: 'FireWyrmJS'
+                }
             }
         }
 
