@@ -1,6 +1,6 @@
 /* globals jasmine, beforeEach, afterEach, describe, it, expect */
 'use strict';
-var base64 = require('../src/base64');
+var base64 = require('base64-arraybuffer');
 var clock = require('./helpers/clock');
 var defaults = require('./helpers/defaults');
 var FireWyrmJS = require('../src/firewyrm');

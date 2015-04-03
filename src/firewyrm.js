@@ -1,8 +1,11 @@
-if (typeof define !== 'function') { var define = require('amdefine')(module); }
-'use strict';
-define(['./deferred', './tools', './browser'], function(Deferred, tools, browser) {
+(function(globalScope) {
+    'use strict';
+    var Deferred = require('./deferred');
+    var tools = require('./tools');
+    var browser = require('./browser');
     FireWyrmJS.asVal = tools.asVal;
-    return FireWyrmJS;
+
+    module.exports = globalScope.FireWyrmJS = FireWyrmJS;
 
     function FireWyrmJS(wyrmhole) {
         var self = this;
@@ -67,4 +70,4 @@ define(['./deferred', './tools', './browser'], function(Deferred, tools, browser
         // Register the 'browser' object before bailing
         register('browser', browser);
     }
-});
+}(typeof(global) !== 'undefined' ? global : this));
