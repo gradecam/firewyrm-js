@@ -25,15 +25,15 @@ if (typeof define !== 'function') { var define = require('amdefine')(module); }
                 }
             }
 
-            function invokeWithDelay(delay, fn, args, context) {
-                context = context || null;
-                if (!(tools.isNumber(delay) && tools.isFunction(fn) && tools.isArray(args))) {
-                    return { $type: 'error', data: { error: 'invalid parameters', message: 'Must provide at least delay (Number), fn (Function), and args (Array)'}};
+            function invokeWithDelay(delay, obj, args, fname) {
+                var fnToCall = fname ? (obj && obj[fname]) : obj;
+                if (!(tools.isNumber(delay) && tools.isFunction(fnToCall) && tools.isArray(args))) {
+                    return { $type: 'error', data: { error: 'invalid parameters', message: 'Must provide at least delay (Number), obj (Function or Object), and args (Array)'}};
                 }
 
                 var releaseWyrmlings = tools.retainAllWyrmlings(args);
                 setTimeout(function() {
-                    fn.apply(context, args);
+                    fnToCall.apply(null, args);
                     releaseWyrmlings();
                 }, delay);
 
