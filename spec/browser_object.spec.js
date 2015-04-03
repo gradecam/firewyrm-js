@@ -1,6 +1,6 @@
 /* globals jasmine, beforeEach, afterEach, describe, it, expect */
 'use strict';
-var b64Buffer = require('base64-arraybuffer');
+var base64 = require('../src/base64');
 var clock = require('./helpers/clock');
 var defaults = require('./helpers/defaults');
 var FireWyrmJS = require('../src/firewyrm');
@@ -124,7 +124,7 @@ describe("browser object", function() {
         it("should return the object kinda-mostly-sorta by value", function() {
             setLocalWyrmling({
                 a: 1,
-                buf: FireWyrmJS.asVal(b64Buffer.decode('Mg==')),
+                buf: FireWyrmJS.asVal(base64.decode('Mg==')),
                 arr: [3],
                 str: 'string'
             });

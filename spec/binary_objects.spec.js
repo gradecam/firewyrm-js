@@ -1,15 +1,15 @@
 /* globals jasmine, beforeEach, afterEach, describe, it, expect */
 'use strict';
+var base64 = require('../src/base64');
 var clock = require('./helpers/clock');
 var defaults = require('./helpers/defaults');
 var FireWyrmJS = require('../src/firewyrm');
 var lifecycle = require('./helpers/lifecycle');
-var b64Buffer = require('base64-arraybuffer');
 
 describe("binary objects traversing the Wyrmhole", function() {
     var mockWyrmhole, queenling,
         bufferStr = 'Mg==',
-        bufferObj = b64Buffer.decode(bufferStr),
+        bufferObj = base64.decode(bufferStr),
         prop = defaults.newQueenlingProps[2]; // complexProp
 
     beforeEach(function() {

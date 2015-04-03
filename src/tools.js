@@ -254,7 +254,7 @@ define(['./deferred', './base64'], function(Deferred, base64) {
                 return val.data;
             }
             if (val.$type === 'binary') {
-                return b64Buffer.decode(val.data);
+                return base64.decode(val.data);
             }
 
             // This must be an object, so recursively make it magical. Since any property could
