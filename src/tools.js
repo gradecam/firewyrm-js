@@ -66,7 +66,9 @@ define(['./deferred', './base64'], function(Deferred, base64) {
                     wyrmlingProperties.__timer = setInterval(function() {
                         for (var prop in wyrmlingProperties) {
                             if (wyrmlingProperties.hasOwnProperty(prop)) {
-                                newStore.setObjectProperty(objectId, prop, obj[prop]);
+                                if (obj[prop] !== wyrmlingProperties[prop]) {
+                                    newStore.setObjectProperty(objectId, prop, obj[prop]);
+                                }
                             }
                         }
                     }, 5000);

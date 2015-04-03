@@ -287,12 +287,15 @@ describe("releasing objects received over the Wyrmhole", function() {
             mockWyrmhole.triggerInbound(['SetP', objSpawnId, objObjectId, 'data', false]);
             expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
         });
-        it("should release the object after 5 seconds if our side replaces the value", function() {
+        it("should release the object after 10 seconds if our side replaces the value", function() {
             obj.data = false;
+            // first 5 seconds are for detecting that the value has been changed
+            jasmine.clock().tick(5000);
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 60, 61]);
-            jasmine.clock().tick(3000);
+            // next 5 seconds are for the 5000ms delay to call RelObj
+            jasmine.clock().tick(4999);
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 60, 61]);
-            jasmine.clock().tick(2000);
+            jasmine.clock().tick(1);
             expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
         });
         it("should release the object if the original wyrmling gets released", function() {

@@ -40,7 +40,7 @@ describe("receiving objects from the Wyrmhole", function() {
             expect(resp).toBeAWyrmling();
         });
         it("should have special, callable promises for each 'Enum'd property (just like queenling)", function() {
-            queenling.getProperty(prop).then(function(thing) { resp = thing; });
+            queenling.getProperty(prop).then(function(thing) { resp = thing; resp.retain(); });
             mockWyrmhole.lastOutbound.success({ $type: 'ref', data: [60, 61] });
             // respond to 'Enum'
             expect(mockWyrmhole.lastOutbound.args).toEqual(['Enum', 60, 61]);
