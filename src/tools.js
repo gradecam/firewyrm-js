@@ -114,6 +114,10 @@ define(['./deferred', './base64'], function(Deferred, base64) {
     // performs Enum and creates the getters / setters / etc.
     function wrapAlienWyrmling(wyrmhole, wyrmlingStore, spawnId, objectId) {
         var refCount = 0, released = false;
+        var releasedFailure = Deferred.reject({
+            error: 'invalid object',
+            message: 'The object has been released'
+        });
         var send = function(args) {
             wyrmling.retain();
             var dfd = Deferred();
@@ -136,21 +140,20 @@ define(['./deferred', './base64'], function(Deferred, base64) {
             spawnId: spawnId,
             objectId: objectId,
             getProperty: function(prop) {
-                if (released) { return; }
-                var getPropVal;
-                var getPromise = send(['GetP', spawnId, objectId, prop]).then(function(val) {
+                var propValue;
+                var getPromise = released ? releasedFailure : send(['GetP', spawnId, objectId, prop]).then(function(val) {
                     return prepInboundValue(wyrmhole, wyrmlingStore, val);
                 }).then(function(val) {
-                    getPropVal = val;
+                    propValue = val;
                     return val;
                 });
                 function magicalFn() {
                     var args = Array.prototype.slice.call(arguments, 0);
                     return getPromise.then(function() {
-                        if (isWyrmling(getPropVal)) {
-                            getPropVal.retain();
-                            var invokePromise = getPropVal.apply(null, args);
-                            Deferred.always(invokePromise, function() { getPropVal.release(); });
+                        if (isWyrmling(propValue)) {
+                            propValue.retain();
+                            var invokePromise = propValue.apply(null, args);
+                            Deferred.always(invokePromise, function() { propValue.release(); });
                             return invokePromise;
                         } else {
                             return Deferred.reject({ error: 'could not invoke', message: 'The object is not invokable' });
@@ -161,13 +164,13 @@ define(['./deferred', './base64'], function(Deferred, base64) {
                 return magicalFn;
             },
             setProperty: function(prop, val) {
-                if (released) { return; }
+                if (released) { return releasedFailure; }
                 return prepOutboundValue(wyrmlingStore, val).then(function(v) {
                     return send(['SetP', spawnId, objectId, prop, v]);
                 });
             },
             invoke: function(prop) {
-                if (released) { return; }
+                if (released) { return releasedFailure; }
                 var args = Array.prototype.slice.call(arguments, 1);
                 return prepOutboundArguments(wyrmlingStore, args).then(function(args) {
                     return send(['Invoke', spawnId, objectId, prop, args]);

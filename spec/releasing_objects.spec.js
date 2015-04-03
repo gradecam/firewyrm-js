@@ -303,4 +303,37 @@ describe("releasing objects received over the Wyrmhole", function() {
             expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
         });
     });
+
+    describe("after objects have been released", function() {
+        var alien, expectedError = { error: 'invalid object', message: 'The object has been released' };
+        beforeEach(function() {
+            alien = (void 0);
+            queenling[prop].then(function(thing) {
+                alien = thing;
+            });
+            mockWyrmhole.lastOutbound.success({ $type: 'ref', data: [60, 61]}); // respond to GetP
+            mockWyrmhole.lastOutbound.success(['someProp']); // respond to Enum
+            mockWyrmhole.lastOutbound.success(null); // respond to RelObj
+        });
+        it("should reject immediately if getProperty is called", function() {
+            expect(alien.getProperty('someProp')).toBeRejectedWith(expectedError);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
+        });
+        it("should reject immediately if setProperty is called", function() {
+            expect(alien.setProperty('someProp', true)).toBeRejectedWith(expectedError);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
+        });
+        it("should reject immediately if invoke is called", function() {
+            expect(alien.invoke('someProp', 1, 2)).toBeRejectedWith(expectedError);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
+        });
+        it("should reject immediately if a getter is accessed", function() {
+            expect(alien.someProp).toBeRejectedWith(expectedError);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
+        });
+        it("should reject immediately if a getter is invoked", function() {
+            expect(alien.someProp(1, 2)).toBeRejectedWith(expectedError);
+            expect(mockWyrmhole.lastOutbound.args).toEqual(['RelObj', 60, 61]);
+        });
+    });
 });
