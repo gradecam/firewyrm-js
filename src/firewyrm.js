@@ -22,6 +22,7 @@ define(['./deferred', './tools', './browser'], function(Deferred, tools, browser
         });
 
         function create(mimetype, args) {
+            args = args || {};
             var wyrmlingStore = baseWyrmlingStore[0];
 
             // Create and resolve the queenling
