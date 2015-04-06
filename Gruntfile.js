@@ -2,6 +2,7 @@
 
 module.exports = function(grunt) {
     grunt.loadNpmTasks('jasmine');
+    grunt.loadNpmTasks('grunt-browserify');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-minifyify');
 
@@ -20,20 +21,32 @@ module.exports = function(grunt) {
                 },
             }
         },
+        browserify: {
+            firewyrm: {
+                files: {
+                    'dist/firewyrm.js': ['src/firewyrm.js']
+                },
+                options: {
+                    browserifyOptions: {
+                        standalone: 'FireWyrmJS'
+                    }
+                }
+            }
+        },
         minifyify: {
             firewyrm: {
                 inputFolder: 'src',
                 entryFile: 'firewyrm',
                 name: 'firewyrm',
-            },
-            options: {
-                ignore: ['grunt', 'grunt-cli'],
-                exclude: ['browserify', 'minifyify'],
-                minifiedExt: '.min.js',
-                mapExt: '.min.json',
-                outputFolder: 'dist',
-                browserifyOptions: {
-                    standalone: 'FireWyrmJS'
+                options: {
+                    ignore: ['grunt', 'grunt-cli'],
+                    exclude: ['browserify', 'minifyify'],
+                    minifiedExt: '.min.js',
+                    mapExt: '.min.json',
+                    outputFolder: 'dist',
+                    browserifyOptions: {
+                        standalone: 'FireWyrmJS'
+                    }
                 }
             }
         }
@@ -42,5 +55,5 @@ module.exports = function(grunt) {
 
     grunt.registerTask('default', ['watch:tests']);
     grunt.registerTask('test', ['specs']);
-    grunt.registerTask('build', ['minifyify']);
+    grunt.registerTask('build', ['browserify', 'minifyify']);
 };
