@@ -5,6 +5,7 @@ var base64 = require('base64-arraybuffer');
 var validMessages = {'New':true, 'Destroy':true, 'RelObj':true, 'Enum':true, 'DelP':true, 'GetP':true, 'SetP':true, 'Invoke':true};
 
 var LocalRelObjDelay = 1000;
+var AutoReleaseWindow = 5000;
 
 module.exports = {
     addWyrmlingStore: addWyrmlingStore,
@@ -73,7 +74,7 @@ function addWyrmlingStore(baseStore, spawnId, rootObject) {
                             }
                         }
                     }
-                }, 5000);
+                }, AutoReleaseWindow);
             }
         }},
         getWyrmlingProperties: { value: function(objectId) {
