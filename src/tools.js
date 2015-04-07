@@ -4,6 +4,8 @@ var Deferred = require('./deferred');
 var base64 = require('base64-arraybuffer');
 var validMessages = {'New':true, 'Destroy':true, 'RelObj':true, 'Enum':true, 'DelP':true, 'GetP':true, 'SetP':true, 'Invoke':true};
 
+var LocalRelObjDelay = 1000;
+
 module.exports = {
     addWyrmlingStore: addWyrmlingStore,
     asVal: asVal,
@@ -421,8 +423,12 @@ function handleSetP(wyrmhole, wyrmlingStore, obj, objectId, prop, val, cb) {
 }
 function handleRelObj(wyrmlingStore, objectId, cb) {
     if (objectId === 0) { return; } // root objects cannot be released, they must be destroyed
-    wyrmlingStore.releaseObject(objectId);
     cb('success', null);
+    // In order to make sure that async timing issues don't cause this to be released
+    // before an object which is returned from the browser, add a short delay before this completes
+    setTimeout(function() {
+        wyrmlingStore.releaseObject(objectId);
+    }, LocalRelObjDelay);
 }
 function handleInvoke(wyrmhole, wyrmlingStore, obj, prop, args, cb) {
     var retVal, promises = [];
