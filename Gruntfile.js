@@ -25,11 +25,6 @@ module.exports = function(grunt) {
             firewyrm: {
                 files: {
                     'dist/firewyrm.js': ['src/firewyrm.js']
-                },
-                options: {
-                    browserifyOptions: {
-                        standalone: 'FireWyrmJS'
-                    }
                 }
             }
         },

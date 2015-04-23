@@ -1,10 +1,11 @@
+(function(globalScope) {
 'use strict';
 var Deferred = require('./deferred');
 var tools = require('./tools');
 var browser = require('./browser');
 FireWyrmJS.asVal = tools.asVal;
 
-module.exports = FireWyrmJS;
+module.exports = globalScope.FireWyrmJS = FireWyrmJS;
 
 function FireWyrmJS(wyrmhole) {
     var self = this;
@@ -69,3 +70,4 @@ function FireWyrmJS(wyrmhole) {
     // Register the 'browser' object before bailing
     register('browser', browser);
 }
+}(typeof(global) !== 'undefined' ? global : this));
