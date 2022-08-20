@@ -2,18 +2,18 @@
 'use strict';
 var clock = require('./helpers/clock');
 var defaults = require('./helpers/defaults');
-var FireWyrmJS = require('../src/firewyrm');
+var FireWyrmJS = require('../dist/firewyrm').default;
 var lifecycle = require('./helpers/lifecycle');
 
 describe("sending objects across the Wyrmhole", function() {
     var mockWyrmhole, queenling,
         prop = defaults.newQueenlingProps[2]; // complexProp
 
-    beforeEach(function() {
+    beforeEach(async function() {
         clock.install();
 
         mockWyrmhole = lifecycle.newMockWyrmhole();
-        queenling = lifecycle.getResolvedQueenling(mockWyrmhole);
+        queenling = await lifecycle.getResolvedQueenling(mockWyrmhole);
     });
     afterEach(function() {
         clock.uninstall();

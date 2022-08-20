@@ -9,11 +9,11 @@ describe("queenling properties", function() {
     var mockWyrmhole, queenling,
         prop = defaults.newQueenlingProps[0];
 
-    beforeEach(function() {
+    beforeEach(async function() {
         clock.install();
 
         mockWyrmhole = lifecycle.newMockWyrmhole();
-        queenling = lifecycle.getResolvedQueenling(mockWyrmhole);
+        queenling = await lifecycle.getResolvedQueenling(mockWyrmhole);
     });
     afterEach(function() {
         clock.uninstall();
@@ -61,8 +61,8 @@ describe("queenling properties", function() {
             });
 
             describe("properties that can't be defined on Functions", function() {
-                it("should silently be ignored", function() {
-                    queenling = lifecycle.getResolvedQueenling(mockWyrmhole, 'mimetype', {}, ['a','length']);
+                it("should silently be ignored", async function() {
+                    queenling = await lifecycle.getResolvedQueenling(mockWyrmhole, 'mimetype', {}, ['a','length']);
                     // this property was defined
                     expect(queenling.a).toEqual(jasmine.any(Function));
                     // this property was not

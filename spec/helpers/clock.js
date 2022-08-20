@@ -4,6 +4,7 @@ module.exports = {
     install: install,
     flush: noop,
     uninstall: uninstall,
+    delay: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
 };
 
 

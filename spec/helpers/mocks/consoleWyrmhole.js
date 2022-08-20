@@ -1,6 +1,7 @@
 module.exports = ConsoleWyrmhole;
 
-var Deferred = require('../../../src/deferred');
+const makeDfd = require('../../../dist/dfd').makeDfd;
+
 function ConsoleWyrmhole() {
     var msgIdCnt = 0;
     var dfds = {};
@@ -12,7 +13,7 @@ function ConsoleWyrmhole() {
             data: data
         };
         console.log('sendMessage: ', msgObj);
-        var dfd = new Deferred();
+        var dfd = makeDfd();
         dfds[msgIdCnt] = dfd;
         return dfd.promise;
     };

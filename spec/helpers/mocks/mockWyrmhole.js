@@ -12,32 +12,32 @@ function MockWyrmhole() {
     };
     self.lastInbound = {};
 
+    const responseQueue = {};
+
+    self.queueResponse = function(msg, response) {
+        if (!responseQueue[msg]) {
+            responseQueue[msg] = [];
+        }
+        responseQueue[msg].push(response);
+    };
+
     // called by FireWyrmJS when it wants to send messages to the other side
-    self.sendMessage = function(msg, cb) {
-        self.lastOutbound = {
-            args: msg,
-            cb: cb,
-            respond: function() {
-                cb.apply(null, arguments);
-                clock.flush(); // process any resulting promises / timeouts if our mock clock is installed
-            },
-            success: function(val) {
-                cb.call(null, 'success', val);
-                clock.flush();
-            },
-            error: function(errorType, errorMsg) {
-                cb.call(null, 'error', { error: errorType, message: errorMsg });
-                clock.flush();
-            },
-        };
-        self.outbound.push(self.lastOutbound);
+    self.sendMessage = async function(msg) {
+        const response = responseQueue[msg] && responseQueue[msg].shift();
+        if (!response) { throw new Error(`No response queued for ${msg}`); }
+        
+        if (response instanceof Error) {
+            throw response;
+        } else {
+            return response;
+        }
     };
     self.getOutbound = function(index) {
         return self.outbound.slice(index, index === -1 ? (void 0) : index+1)[0];
     };
 
     // called by FireWyrmJS so it can receive messages from the other side
-    self.onMessage = function(fn) { // fn expects (message, cb)
+    self.onMessage = function(fn) { // fn expects (message)
         msgHandler = fn;
     };
     var msgHandler; // handles messages coming from the other side into FireWyrmJS
@@ -53,9 +53,12 @@ function MockWyrmhole() {
         };
         self.lastInbound = inbound;
         setTimeout(function() {
-            msgHandler(msg, function(status, resp) {
-                inbound.status = status;
+            msgHandler(msg).then(value => {
+                inbound.status = 'success';
                 inbound.response = resp;
+            }, error => {
+                inbound.status = 'error';
+                inbound.response = error;
             });
         }, 0);
 

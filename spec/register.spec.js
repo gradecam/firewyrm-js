@@ -1,7 +1,7 @@
 /* globals jasmine, beforeEach, afterEach, describe, it, expect */
 'use strict';
-var Deferred = require('../src/deferred');
-var FireWyrmJS = require('../src/firewyrm');
+const makeDfd = require('../dist/dfd').makeDfd;
+var FireWyrmJS = require('../dist/firewyrm').default;
 var clock = require('./helpers/clock');
 var lifecycle = require('./helpers/lifecycle');
 
@@ -32,7 +32,7 @@ describe("creating objects locally of a specified object type", function() {
             expect(fw.registerObjectType(type, function(){})).toBeResolved();
         });
         it("should succeed if function is a promise that resolves to a function", function() {
-            var fnDfd = Deferred();
+            var fnDfd = makeDfd();
             fnDfd.resolve(function(){});
             expect(fw.registerObjectType(type, fnDfd.promise)).toBeResolved();
         });

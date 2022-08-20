@@ -1,6 +1,6 @@
 /* globals jasmine, beforeEach, afterEach, describe, it, expect */
 'use strict';
-var FireWyrmJS = require('../src/firewyrm');
+var FireWyrmJS = require('../dist/firewyrm').default;
 var clock = require('./helpers/clock');
 var lifecycle = require('./helpers/lifecycle');
 
@@ -49,8 +49,8 @@ describe("basic lifecycle", function() {
     });
 
     describe("after the queenling is resolved", function() {
-        beforeEach(function() {
-            queenling = lifecycle.getResolvedQueenling(mockWyrmhole);
+        beforeEach(async function() {
+            queenling = await lifecycle.getResolvedQueenling(mockWyrmhole);
         });
         it("should make note of its spawnId and objectId", function() {
             expect(queenling.spawnId).toBe(mockWyrmhole.lastSpawnId);
@@ -67,8 +67,8 @@ describe("basic lifecycle", function() {
     });
 
     describe("destroying the queenling", function() {
-        beforeEach(function() {
-            queenling = lifecycle.getResolvedQueenling(mockWyrmhole);
+        beforeEach(async function() {
+            queenling = await lifecycle.getResolvedQueenling(mockWyrmhole);
         });
         it("should send Destroy over the Wyrmhole", function() {
             queenling.destroy();

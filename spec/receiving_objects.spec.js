@@ -8,11 +8,11 @@ describe("receiving objects from the Wyrmhole", function() {
     var mockWyrmhole, queenling,
         prop = defaults.newQueenlingProps[2]; // complexProp
 
-    beforeEach(function() {
+    beforeEach(async function() {
         clock.install();
 
         mockWyrmhole = lifecycle.newMockWyrmhole();
-        queenling = lifecycle.getResolvedQueenling(mockWyrmhole);
+        queenling = await lifecycle.getResolvedQueenling(mockWyrmhole);
     });
     afterEach(function() {
         clock.uninstall();
